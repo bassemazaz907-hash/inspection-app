@@ -1,0 +1,23 @@
+# ===== إعدادات النشر على Render (نسخة تجريبية مجانية) =====
+# انسخ الكود إلى GitHub ثم اربط المستودع بـ Render — هيقرأ هذا الملف تلقائيًا
+
+services:
+  - type: web
+    name: inspection-app
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server/index.js
+    healthCheckPath: /
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inspection-db
+          property: connectionString
+
+databases:
+  - name: inspection-db
+    plan: free
+    databaseName: inspection

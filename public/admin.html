@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="لوحة التحكم" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <title>لوحة التحكم</title>
+  <script>
+    try {
+      var m = localStorage.getItem("theme_mode");
+      if (!m) m = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.dataset.theme = m;
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/theme.js"></script>
+</head>
+<body class="page-admin">
+  <!-- ===== شاشة الدخول ===== -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="brand login-brand">
+        <div class="brand-icon">⚙️</div>
+        <div class="brand-title" data-label="login_title">لوحة التحكم</div>
+      </div>
+      <div class="field">
+        <label data-label="login_password">كلمة المرور</label>
+        <input type="password" id="passwordInput" />
+      </div>
+      <button class="btn btn-primary btn-block" id="loginBtn" data-label="login_btn">دخول</button>
+      <div class="login-hint" id="loginHint" data-label="login_hint">كلمة المرور الافتراضية: admin123</div>
+      <div id="loginError" class="login-error" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <!-- ===== الشريط العلوي + التبويبات (الموبايل) ===== -->
+    <header class="admin-head">
+      <div class="app-bar">
+        <a class="app-bar-title" href="/" style="text-decoration:none;color:inherit">
+          <span class="brand-icon">✓</span>
+          <span data-label="title">نظام الفحص اليومي</span>
+        </a>
+        <div class="app-bar-actions">
+          <a class="logo-btn" href="/" data-label-title="back_home" title="الشاشة الرئيسية">
+            <img id="brandLogoImg" alt="" />
+          </a>
+          <span class="icon-btn ghost-light" title="البث المباشر"><span class="live-dot"></span></span>
+          <a class="icon-btn" href="/" title="الموقع">🏠</a>
+          <button class="icon-btn" id="themeToggle" title="الوضع الليلي">🌙</button>
+          <button class="icon-btn" id="installBtn" title="تثبيت التطبيق" style="display:none">⬇️</button>
+        </div>
+      </div>
+      <nav class="tab-strip">
+        <button class="tab-strip-btn active" data-tab="overview"><span data-label="overview">نظرة عامة</span></button>
+        <button class="tab-strip-btn" data-tab="theme"><span data-label="theme_tab">المظهر</span></button>
+        <button class="tab-strip-btn" data-tab="sections"><span data-label="sections_tab">الأقسام</span></button>
+        <button class="tab-strip-btn" data-tab="shifts"><span data-label="shifts_tab">الورديات</span></button>
+        <button class="tab-strip-btn" data-tab="penalty-types"><span data-label="penalty_types_tab">الغرامات</span></button>
+        <button class="tab-strip-btn" data-tab="labels"><span data-label="labels_tab">المسميات</span></button>
+        <button class="tab-strip-btn" data-tab="settings"><span data-label="settings_tab">الإعدادات</span></button>
+      </nav>
+    </header>
+
+    <!-- ===== الشريط الجانبي (سطح المكتب) ===== -->
+    <aside class="sidebar">
+      <a class="brand" href="/" style="text-decoration:none;color:inherit" data-label-title="back_home" title="الشاشة الرئيسية">
+        <span class="brand-icon" id="brandIconSide">⚙️</span>
+        <img id="brandLogoImgSide" class="brand-logo" alt="" style="display:none" />
+        <span class="brand-title" data-label="login_title">لوحة التحكم</span>
+      </a>
+      <nav>
+        <button class="nav-item active" data-tab="overview">
+          <span class="nav-icon">📊</span><span data-label="overview">نظرة عامة</span>
+        </button>
+        <button class="nav-item" data-tab="theme">
+          <span class="nav-icon">🎨</span><span data-label="theme_tab">المظهر والألوان</span>
+        </button>
+        <button class="nav-item" data-tab="sections">
+          <span class="nav-icon">🗂️</span><span data-label="sections_tab">الأقسام والعناصر</span>
+        </button>
+        <button class="nav-item" data-tab="shifts">
+          <span class="nav-icon">🕐</span><span data-label="shifts_tab">الورديات</span>
+        </button>
+        <button class="nav-item" data-tab="penalty-types">
+          <span class="nav-icon">💰</span><span data-label="penalty_types_tab">أنواع الغرامات</span>
+        </button>
+        <button class="nav-item" data-tab="labels">
+          <span class="nav-icon">🏷️</span><span data-label="labels_tab">المسميات</span>
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <span class="nav-icon">🔐</span><span data-label="settings_tab">الإعدادات</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="live-status">
+          <span class="live-dot" id="liveDot"></span>
+          <span id="liveStatusText" data-label="live_status">متصل بالبث المباشر</span>
+        </div>
+        <a class="btn btn-sm btn-ghost" href="/" target="_blank" id="previewBtn" style="width:100%;margin-top:8px"><span data-label="preview_site">معاينة الموقع</span></a>
+        <button class="btn btn-sm btn-danger-ghost" id="logoutBtn" style="width:100%;margin-top:8px"><span data-label="logout_btn">تسجيل الخروج</span></button>
+      </div>
+    </aside>
+
+    <!-- ===== المحتوى ===== -->
+    <main class="main">
+
+      <!-- نظرة عامة -->
+      <section id="view-overview" class="view active">
+        <div class="page-header">
+          <div>
+            <h1 data-label="overview">نظرة عامة</h1>
+            <div class="subtitle" id="adminWelcome"></div>
+          </div>
+        </div>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="card">
+          <div class="card-title"><span><span class="title-icon">🕒</span><span data-label="latest_reports">أحدث التقارير</span></span></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-label="col_number">#</th>
+                  <th data-label="col_date">التاريخ</th>
+                  <th data-label="col_shift">الوردية</th>
+                  <th data-label="col_items">البنود</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="latestTableBody"></tbody>
+            </table>
+            <div id="latestEmpty" class="empty" style="display:none">
+              <div class="empty-icon">📋</div>
+              <div class="empty-text" data-label="no_reports">لا توجد تقارير مطابقة</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- المظهر والألوان -->
+      <section id="view-theme" class="view">
+        <div class="page-header">
+          <div>
+            <h1 data-label="theme_tab">المظهر والألوان</h1>
+            <div class="subtitle" data-label="theme_desc">غيّر أي لون وسيتم تطبيقه فوراً على كل الموقع. اضغط حفظ لتثبيت التغييرات.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span><span class="title-icon">🏷️</span><span data-label="project_title_label">عنوان المشروع</span></span></div>
+          <div class="field">
+            <input type="text" id="projectTitleInput" data-label-placeholder="project_title_placeholder" />
+          </div>
+          <button class="btn btn-success" id="saveTitleBtn" data-label="save_title">حفظ العنوان</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><span><span class="title-icon">🎨</span><span data-label="theme_title">ألوان الموقع</span></span></div>
+          <div class="theme-grid" id="themeFields"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+            <button class="btn btn-success" id="saveColorsBtn" data-label="save_colors">حفظ الألوان</button>
+            <button class="btn" id="resetColorsBtn" data-label="reset_colors">استعادة الافتراضي</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span><span class="title-icon">🖼️</span><span data-label="logos_title">اللوجوهات</span></span></div>
+          <div class="subtitle" style="margin-bottom:14px" data-label="logo_hint">اضغط على اللوجو أعلى الصفحة للعودة إلى الشاشة الرئيسية من أي مكان. لوجو الخلفية يظهر خلف محتوى الشاشة الرئيسية.</div>
+          <div class="logo-grid">
+            <div class="logo-manager">
+              <label class="theme-label" data-label="logo_brand_label">لوجو أعلى الصفحة (الزر)</label>
+              <div class="logo-preview"><img id="logoPreviewBrand" alt="" style="display:none" /></div>
+              <div class="logo-actions">
+                <input type="file" id="logoFileBrand" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none" />
+                <button class="btn btn-sm" id="logoChooseBrand"><span data-label="logo_choose">اختر صورة</span></button>
+                <button class="btn btn-sm btn-danger-ghost" id="logoRemoveBrand"><span data-label="logo_remove">إزالة</span></button>
+              </div>
+              <div class="logo-hint" data-label="logo_choose_hint">PNG أو JPG أو WebP — حتى 2 ميجا</div>
+            </div>
+            <div class="logo-manager">
+              <label class="theme-label" data-label="logo_bg_label">لوجو الخلفية</label>
+              <div class="logo-preview"><img id="logoPreviewBg" alt="" style="display:none" /></div>
+              <div class="logo-actions">
+                <input type="file" id="logoFileBg" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none" />
+                <button class="btn btn-sm" id="logoChooseBg"><span data-label="logo_choose">اختر صورة</span></button>
+                <button class="btn btn-sm btn-danger-ghost" id="logoRemoveBg"><span data-label="logo_remove">إزالة</span></button>
+              </div>
+              <div class="logo-hint" data-label="logo_choose_hint">PNG أو JPG أو WebP — حتى 2 ميجا</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- الأقسام والعناصر -->
+      <section id="view-sections" class="view">
+        <div class="page-header">
+          <div>
+            <h1 data-label="sections_tab">الأقسام والعناصر</h1>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span><span class="title-icon">➕</span><span data-label="add_section">+ قسم جديد</span></span></div>
+          <div class="form-row">
+            <div class="field">
+              <input type="text" id="sectionNameInput" data-label-placeholder="section_name_placeholder" />
+            </div>
+            <div class="field" style="flex:0 0 auto">
+              <button class="btn btn-success" id="addSectionBtn" data-label="add">إضافة</button>
+            </div>
+          </div>
+        </div>
+        <div id="sectionsList"></div>
+      </section>
+
+      <!-- الورديات -->
+      <section id="view-shifts" class="view">
+        <div class="page-header">
+          <div>
+            <h1 data-label="shifts_tab">الورديات</h1>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span><span class="title-icon">➕</span><span data-label="add_shift">+ وردية جديدة</span></span></div>
+          <div class="form-row">
+            <div class="field">
+              <input type="text" id="shiftNameInput" data-label-placeholder="shift_name_placeholder" />
+            </div>
+            <div class="field" style="flex:0 0 auto">
+              <button class="btn btn-success" id="addShiftBtn" data-label="add">إضافة</button>
+            </div>
+          </div>
+        </div>
+        <div id="shiftsList"></div>
+      </section>
+
+      <!-- أنواع الغرامات -->
+      <section id="view-penalty-types" class="view">
+        <div class="page-header">
+          <div>
+            <h1 data-label="penalty_types_tab">أنواع الغرامات</h1>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span><span class="title-icon">➕</span><span data-label="add_penalty_type">+ نوع جديد</span></span></div>
+          <div class="form-row">
+            <div class="field">
+              <input type="text" id="penaltyNameInput" data-label-placeholder="penalty_type_name_placeholder" />
+            </div>
+            <div class="field">
+              <input type="number" id="penaltyAmountInput" step="0.01" min="0" />
+            </div>
+            <div class="field" style="flex:0 0 auto">
+              <button class="btn btn-success" id="addPenaltyTypeBtn" data-label="add">إضافة</button>
+            </div>
+          </div>
+        </div>
+        <div id="penaltyTypesList"></div>
+      </section>
+
+      <!-- المسميات -->
+      <section id="view-labels" class="view">
+        <div class="page-header">
+          <div>
+            <h1 data-label="labels_title">مسميات التطبيق</h1>
+            <div class="subtitle" data-label="labels_desc">غيّر أسماء أي شيء في التطبيق — الأزرار والأقسام والحالات والمزيد.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div id="labelsContainer"></div>
+          <button class="btn btn-success" id="saveLabelsBtn" data-label="save_labels">حفظ المسميات</button>
+        </div>
+      </section>
+
+      <!-- الإعدادات -->
+      <section id="view-settings" class="view">
+        <div class="page-header">
+          <div>
+            <h1 data-label="settings_tab">الإعدادات</h1>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span><span class="title-icon">🔑</span><span data-label="change_password">تغيير كلمة المرور</span></span></div>
+          <div class="field">
+            <label data-label="current_password">كلمة المرور الحالية</label>
+            <input type="password" id="currentPwInput" />
+          </div>
+          <div class="field">
+            <label data-label="new_password">كلمة المرور الجديدة</label>
+            <input type="password" id="newPwInput" />
+          </div>
+          <div class="field">
+            <label data-label="confirm_password">تأكيد كلمة المرور</label>
+            <input type="password" id="confirmPwInput" />
+          </div>
+          <button class="btn btn-success" id="changePwBtn" data-label="change_password_btn">تغيير كلمة المرور</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- ===== تفاصيل التقرير ===== -->
+  <div class="modal-overlay" id="reportModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">تفاصيل التقرير</h3>
+        <button class="modal-close" onclick="closeReportModal()">✕</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="js/pwa.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
