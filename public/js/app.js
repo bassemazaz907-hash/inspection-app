@@ -3,6 +3,8 @@ let sectionsData = [];
 let shiftsData = [];
 let penaltyTypesData = [];
 let currentFilters = {};
+let currentShiftId = null;
+let currentPenaltyIds = new Set();
 
 // ===== أدوات مساعدة =====
 async function api(path, options = {}) {
@@ -136,23 +138,61 @@ async function loadSections() {
 
 async function loadShifts() {
   shiftsData = await api("/api/shifts");
-  const shiftSelect = document.getElementById("shiftSelect");
+  const container = document.getElementById("shiftChips");
   const filterShift = document.getElementById("filterShift");
-  shiftSelect.innerHTML = "";
+  container.innerHTML = "";
   filterShift.innerHTML = "";
   if (!shiftsData.length) {
-    shiftSelect.appendChild(el("option", { value: "" }, [L.no_shifts]));
+    container.appendChild(el("div", { class: "chip-group" }, [el("span", { class: "chip disabled" }, [L.no_shifts])]));
     return;
   }
   filterShift.appendChild(el("option", { value: "" }, [L.all_shifts]));
   for (const s of shiftsData) {
-    shiftSelect.appendChild(el("option", { value: s.id }, [s.name]));
+    const chip = el("button", { type: "button", class: "chip", onclick: () => selectShift(s.id, chip) }, [s.name]);
+    chip.dataset.id = s.id;
+    container.appendChild(chip);
     filterShift.appendChild(el("option", { value: s.id }, [s.name]));
+  }
+}
+
+function selectShift(id, chip) {
+  if (currentShiftId === id) {
+    currentShiftId = null;
+    chip.classList.remove("active");
+    return;
+  }
+  currentShiftId = id;
+  document.querySelectorAll("#shiftChips .chip").forEach((c) => c.classList.remove("active"));
+  chip.classList.add("active");
+}
+
+function selectPenalty(id, chip) {
+  chip.classList.toggle("active");
+  if (currentPenaltyIds.has(id)) {
+    currentPenaltyIds.delete(id);
+    const row = document.querySelector(`.penalty-row[data-penalty-id="${id}"]`);
+    if (row) row.remove();
+  } else {
+    currentPenaltyIds.add(id);
+    addPenaltyRow(id);
   }
 }
 
 async function loadPenaltyTypes() {
   penaltyTypesData = await api("/api/penalty-types");
+  const container = document.getElementById("penaltyChips");
+  container.innerHTML = "";
+  if (!penaltyTypesData.length) {
+    container.appendChild(el("div", { class: "chip-group" }, [el("span", { class: "chip disabled" }, [L.no_penalty_types])]));
+    return;
+  }
+  for (const t of penaltyTypesData) {
+    const chip = el("button", { type: "button", class: "chip", onclick: () => selectPenalty(t.id, chip) }, [
+      `${t.name} — ${t.amount}`,
+    ]);
+    chip.dataset.id = t.id;
+    container.appendChild(chip);
+  }
 }
 
 // ===== عرض قائمة الفحص =====
@@ -225,48 +265,39 @@ function setStatus(row, status) {
 function renderPenaltyRows() {
   const container = document.getElementById("penaltyRows");
   container.innerHTML = "";
-  if (!penaltyTypesData.length) {
-    container.appendChild(
-      el("div", { class: "empty", style: "padding:12px" }, [L.no_penalty_types])
-    );
-    return;
-  }
-  addPenaltyRow();
+  currentPenaltyIds.forEach((id) => addPenaltyRow(id));
 }
 
-function addPenaltyRow() {
+function addPenaltyRow(penaltyId) {
   const container = document.getElementById("penaltyRows");
-  if (!penaltyTypesData.length) return;
+  const type = penaltyTypesData.find((t) => t.id === penaltyId);
+  if (!type) return;
 
-  const row = el("div", { class: "penalty-row" });
-  const select = el("select", {});
-  for (const t of penaltyTypesData) {
-    select.appendChild(el("option", { value: t.id }, [t.name]));
-  }
-  const amountInput = el("input", { type: "number", step: "0.01", min: "0", placeholder: L.amount });
-  select.addEventListener("change", () => {
-    const t = penaltyTypesData.find((x) => x.id === Number(select.value));
-    if (t) amountInput.value = t.amount;
-  });
+  const row = el("div", { class: "penalty-row", "data-penalty-id": type.id });
+  const name = el("span", { class: "penalty-name" }, [type.name]);
+  const amountInput = el("input", { type: "number", step: "0.01", min: "0", value: type.amount, placeholder: L.amount });
   const noteInput = el("input", { type: "text", placeholder: L.note_placeholder, class: "penalty-note" });
   const removeBtn = el("button", { class: "remove-btn", type: "button" }, ["✕"]);
-  removeBtn.addEventListener("click", () => row.remove());
+  removeBtn.addEventListener("click", () => {
+    currentPenaltyIds.delete(type.id);
+    const chip = document.querySelector(`#penaltyChips .chip[data-id="${type.id}"]`);
+    if (chip) chip.classList.remove("active");
+    row.remove();
+  });
 
-  row.appendChild(select);
+  row.appendChild(name);
   row.appendChild(amountInput);
   row.appendChild(noteInput);
   row.appendChild(removeBtn);
   container.appendChild(row);
 }
 
-document.getElementById("addPenaltyBtn").addEventListener("click", addPenaltyRow);
-
 // ===== حفظ التقرير =====
 document.getElementById("saveReportBtn").addEventListener("click", async () => {
   const reportDate = document.getElementById("reportDate").value;
   if (!reportDate) return toast(L.date_label + " " + L.report_label + " " + "مطلوب", "error");
 
-  const shiftId = Number(document.getElementById("shiftSelect").value) || null;
+  const shiftId = currentShiftId;
 
   const items = [];
   document.querySelectorAll(".item-row").forEach((row) => {
@@ -279,11 +310,11 @@ document.getElementById("saveReportBtn").addEventListener("click", async () => {
 
   const penalties = [];
   document.querySelectorAll(".penalty-row").forEach((row) => {
-    const select = row.querySelector("select");
+    const typeId = Number(row.dataset.penaltyId);
     const amount = Number(row.querySelector('input[type="number"]').value);
     const note = row.querySelector(".penalty-note").value.trim();
-    if (select && select.value) {
-      penalties.push({ penaltyTypeId: Number(select.value), amount: amount || 0, note: note || null });
+    if (typeId) {
+      penalties.push({ penaltyTypeId: typeId, amount: amount || 0, note: note || null });
     }
   });
 
@@ -311,9 +342,12 @@ function resetForm() {
     setStatus(row, "pass");
     row.querySelector(".item-notes input").value = "";
   });
+  currentShiftId = null;
+  document.querySelectorAll("#shiftChips .chip").forEach((c) => c.classList.remove("active"));
+  currentPenaltyIds.clear();
+  document.querySelectorAll("#penaltyChips .chip").forEach((c) => c.classList.remove("active"));
   document.getElementById("penaltyRows").innerHTML = "";
   document.getElementById("reportNotes").value = "";
-  renderPenaltyRows();
 }
 
 // ===== التنقل =====
