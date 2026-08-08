@@ -500,7 +500,7 @@ app.get("/api/admin/overview", requireAdmin, handle(async (req, res) => {
   ]);
 
   const failedTotal = allItems.filter((i) => i.status === "fail").length;
-  const penaltyAmount = Math.round(allPenalties.reduce((s, p) => s + Number(p.amount || 0), 0) * 100) / 100;
+  const penaltyCount = allPenalties.length;
 
   const shiftMap = await loadShiftsMap(db);
   const latest = [];
@@ -512,7 +512,7 @@ app.get("/api/admin/overview", requireAdmin, handle(async (req, res) => {
     totalReports: totalReports.length,
     todayReports: todayReports.length,
     failedTotal,
-    penaltyAmount,
+    penaltyCount,
     totalSections: countSections[0]?.n || 0,
     totalShifts: countShifts[0]?.n || 0,
     totalPenaltyTypes: countTypes[0]?.n || 0,

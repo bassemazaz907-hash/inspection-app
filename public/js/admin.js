@@ -261,7 +261,7 @@ async function loadOverview() {
       { key: "stat_total_reports", value: d.totalReports, icon: "📊" },
       { key: "stat_today_reports", value: d.todayReports, icon: "📅" },
       { key: "stat_failed_items", value: d.failedTotal, icon: "✕" },
-      { key: "stat_penalty_total", value: d.penaltyAmount, icon: "💰" },
+      { key: "stat_penalty_total", value: d.penaltyCount, icon: "💰" },
       { key: "stat_sections", value: d.totalSections, icon: "🗂️" },
       { key: "stat_items", value: "-", icon: "🧾" },
       { key: "stat_shifts", value: d.totalShifts, icon: "🕐" },
@@ -671,7 +671,6 @@ async function loadPenaltyTypes() {
   for (const type of penaltyTypesData) {
     const row = el("div", { class: "manage-item" });
     row.appendChild(el("span", { class: "item-text" }, [type.name]));
-    row.appendChild(el("span", { class: "badge badge-muted" }, [`${type.amount}`]));
     const actions = el("div", { class: "actions" });
     const editBtn = el("button", { class: "btn btn-sm btn-ghost" }, [L.edit]);
     editBtn.addEventListener("click", () => editPenaltyType(type));
@@ -687,16 +686,14 @@ async function loadPenaltyTypes() {
 
 async function addPenaltyType() {
   const nameInput = document.getElementById("penaltyNameInput");
-  const amountInput = document.getElementById("penaltyAmountInput");
   const name = nameInput.value.trim();
   if (!name) return toast(L.penalty_label + " " + "مطلوب", "error");
   try {
     await api("/api/admin/penalty-types", {
       method: "POST",
-      body: JSON.stringify({ name, amount: Number(amountInput.value || 0) }),
+      body: JSON.stringify({ name }),
     });
     nameInput.value = "";
-    amountInput.value = "";
     toast(`${L.add} ✓`, "success", "✅");
     loadPenaltyTypes();
   } catch (e) {
@@ -707,12 +704,10 @@ async function addPenaltyType() {
 async function editPenaltyType(type) {
   const name = prompt(L.penalty_label, type.name);
   if (!name || name.trim() === type.name) return;
-  const amount = prompt(L.amount, type.amount);
-  if (amount === null) return;
   try {
     await api(`/api/admin/penalty-types/${type.id}`, {
       method: "PUT",
-      body: JSON.stringify({ name: name.trim(), amount: Number(amount || 0) }),
+      body: JSON.stringify({ name: name.trim() }),
     });
     loadPenaltyTypes();
   } catch (e) {
@@ -836,13 +831,10 @@ async function openReportModal(id) {
       for (const p of r.penalties) {
         const row = el("div", { class: "manage-item" }, [
           el("span", { class: "item-text" }, [p.typeName || `${L.penalty_label} #${p.penaltyTypeId}`]),
-          el("span", {}, [`${p.amount} ${p.note ? `— ${p.note}` : ""}`]),
+          p.note ? el("span", {}, [p.note]) : null,
         ]);
         card.appendChild(row);
       }
-      card.appendChild(
-        el("div", { style: "font-weight:800;margin-top:12px;color:var(--color-danger)" }, [`${L.total}: ${r.penaltyTotal}`])
-      );
       body.appendChild(card);
     }
 

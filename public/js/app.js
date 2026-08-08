@@ -188,7 +188,7 @@ async function loadPenaltyTypes() {
   }
   for (const t of penaltyTypesData) {
     const chip = el("button", { type: "button", class: "chip", onclick: () => selectPenalty(t.id, chip) }, [
-      `${t.name} — ${t.amount}`,
+      t.name,
     ]);
     chip.dataset.id = t.id;
     container.appendChild(chip);
@@ -283,7 +283,6 @@ function addPenaltyRow(penaltyId) {
 
   const row = el("div", { class: "penalty-row", "data-penalty-id": type.id });
   const name = el("span", { class: "penalty-name" }, [type.name]);
-  const amountInput = el("input", { type: "number", step: "0.01", min: "0", value: type.amount, placeholder: L.amount });
   const noteInput = el("input", { type: "text", placeholder: L.note_placeholder, class: "penalty-note" });
   const removeBtn = el("button", { class: "remove-btn", type: "button" }, ["✕"]);
   removeBtn.addEventListener("click", () => {
@@ -294,7 +293,6 @@ function addPenaltyRow(penaltyId) {
   });
 
   row.appendChild(name);
-  row.appendChild(amountInput);
   row.appendChild(noteInput);
   row.appendChild(removeBtn);
   container.appendChild(row);
@@ -319,10 +317,9 @@ document.getElementById("saveReportBtn").addEventListener("click", async () => {
   const penalties = [];
   document.querySelectorAll(".penalty-row").forEach((row) => {
     const typeId = Number(row.dataset.penaltyId);
-    const amount = Number(row.querySelector('input[type="number"]').value);
     const note = row.querySelector(".penalty-note").value.trim();
     if (typeId) {
-      penalties.push({ penaltyTypeId: typeId, amount: amount || 0, note: note || null });
+      penalties.push({ penaltyTypeId: typeId, amount: 0, note: note || null });
     }
   });
 
@@ -420,7 +417,7 @@ function renderReportRow(r) {
       el("span", { class: "badge " + (r.failed ? "badge-danger" : "badge-muted") }, [`${r.failed} ✕`]),
     ])
   );
-  tr.appendChild(el("td", {}, [r.penaltyTotal ? `${r.penaltyTotal}` : "—"]));
+  tr.appendChild(el("td", {}, [r.penaltiesCount ? `${r.penaltiesCount}` : "—"]));
   const viewBtn = el("button", { class: "btn btn-sm btn-ghost" }, [L.view]);
   viewBtn.addEventListener("click", () => openReportModal(r.id));
   tr.appendChild(el("td", {}, [viewBtn]));
@@ -479,13 +476,10 @@ async function openReportModal(id) {
       for (const p of r.penalties) {
         const row = el("div", { class: "manage-item" }, [
           el("span", { class: "item-text" }, [p.typeName || `${L.penalty_label} #${p.penaltyTypeId}`]),
-          el("span", {}, [`${p.amount} ${p.note ? `— ${p.note}` : ""}`]),
+          p.note ? el("span", {}, [p.note]) : null,
         ]);
         card.appendChild(row);
       }
-      card.appendChild(
-        el("div", { style: "font-weight:800;margin-top:12px;color:var(--color-danger)" }, [`${L.total}: ${r.penaltyTotal}`])
-      );
       body.appendChild(card);
     }
 
