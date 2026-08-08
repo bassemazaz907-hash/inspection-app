@@ -158,20 +158,22 @@ function showLogin() {
 }
 
 // ===== التنقل =====
+function goToTab(tab) {
+  const selectors = [".nav-item[data-tab]", ".tab-strip-btn[data-tab]"];
+  document.querySelectorAll(selectors.join(",")).forEach((b) => b.classList.remove("active"));
+  document.querySelectorAll(`[data-tab="${tab}"]`).forEach((b) => b.classList.add("active"));
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  document.getElementById(`view-${tab}`).classList.add("active");
+  if (tab === "overview") loadOverview();
+  if (tab === "sections") loadSections();
+  if (tab === "shifts") loadShifts();
+  if (tab === "penalty-types") loadPenaltyTypes();
+}
+
 function setupTabs() {
   const selectors = [".nav-item[data-tab]", ".tab-strip-btn[data-tab]"];
   document.querySelectorAll(selectors.join(",")).forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(selectors.join(",")).forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      const tab = btn.dataset.tab;
-      document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
-      document.getElementById(`view-${tab}`).classList.add("active");
-      if (tab === "overview") loadOverview();
-      if (tab === "sections") loadSections();
-      if (tab === "shifts") loadShifts();
-      if (tab === "penalty-types") loadPenaltyTypes();
-    });
+    btn.addEventListener("click", () => goToTab(btn.dataset.tab));
   });
 }
 
@@ -258,20 +260,25 @@ async function loadOverview() {
     });
 
     const stats = [
-      { key: "stat_total_reports", value: d.totalReports, icon: "📊" },
-      { key: "stat_today_reports", value: d.todayReports, icon: "📅" },
-      { key: "stat_failed_items", value: d.failedTotal, icon: "✕" },
-      { key: "stat_penalty_total", value: d.penaltyCount, icon: "💰" },
-      { key: "stat_sections", value: d.totalSections, icon: "🗂️" },
-      { key: "stat_items", value: "-", icon: "🧾" },
-      { key: "stat_shifts", value: d.totalShifts, icon: "🕐" },
-      { key: "stat_penalty_types", value: d.totalPenaltyTypes, icon: "🏷️" },
+      { key: "stat_total_reports", value: d.totalReports, icon: "📊", tab: "reports" },
+      { key: "stat_today_reports", value: d.todayReports, icon: "📅", tab: "reports" },
+      { key: "stat_failed_items", value: d.failedTotal, icon: "✕", tab: "reports" },
+      { key: "stat_penalty_total", value: d.penaltyCount, icon: "💰", tab: "penalty-types" },
+      { key: "stat_sections", value: d.totalSections, icon: "🗂️", tab: "sections" },
+      { key: "stat_items", value: "-", icon: "🧾", tab: "sections" },
+      { key: "stat_shifts", value: d.totalShifts, icon: "🕐", tab: "shifts" },
+      { key: "stat_penalty_types", value: d.totalPenaltyTypes, icon: "🏷️", tab: "penalty-types" },
     ];
     const grid = document.getElementById("statsGrid");
     grid.innerHTML = "";
     for (const s of stats) {
-      const card = el("div", { class: "stat-card card-hover" });
-      card.appendChild(el("div", { class: "stat-icon" }, [s.icon]));
+      let card;
+      if (s.tab === "reports") {
+        card = el("a", { class: "stat-card card-hover stat-clickable", href: "/reports" });
+      } else {
+        card = el("button", { class: "stat-card card-hover stat-clickable", onclick: () => goToTab(s.tab) });
+      }
+      card.appendChild(el("span", { class: "stat-icon" }, [s.icon]));
       const body = el("div", { class: "stat-body" });
       body.appendChild(el("div", { class: "stat-value" }, [s.value]));
       body.appendChild(el("div", { class: "stat-label" }, [L[s.key] || s.key]));

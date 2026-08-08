@@ -1086,6 +1086,20 @@ tbody tr:last-child td {
   flex-shrink: 0;
 }
 
+.stat-clickable {
+  border: 1px solid var(--color-card-border);
+  cursor: pointer;
+  text-decoration: none;
+  text-align: start;
+  font-family: inherit;
+  width: 100%;
+}
+
+.stat-clickable:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
 .stat-value {
   font-size: 1.45em;
   font-weight: 800;
