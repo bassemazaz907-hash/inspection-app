@@ -34,6 +34,7 @@ export const inspectionItems = mysqlTable("inspection_items", {
     .notNull()
     .references(() => sections.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
+  icon: varchar("icon", { length: 64 }),
   order: int("sort_order").notNull().default(0),
 });
 

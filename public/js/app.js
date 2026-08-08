@@ -222,25 +222,30 @@ function renderChecklist() {
     if (!section.items.length) {
       card.appendChild(el("div", { class: "empty", style: "padding:16px" }, [L.no_items_in_section]));
     }
+    const grid = el("div", { class: "item-grid" });
     for (const item of section.items) {
-      card.appendChild(renderItemRow(item));
+      grid.appendChild(renderItemRow(item));
     }
+    card.appendChild(grid);
     container.appendChild(card);
   }
 }
 
 function renderItemRow(item) {
-  const row = el("div", { class: "item-row" });
-  row.appendChild(el("div", { class: "item-name" }, [item.name]));
+  const card = el("div", { class: "item-card" });
+  card.dataset.itemId = item.id;
 
-  const seg = el("div", { class: "segmented" });
+  const seg = el("div", { class: "segmented item-status" });
   const passBtn = el("button", { class: "pass active", type: "button" }, [L.pass_label]);
   const failBtn = el("button", { class: "fail", type: "button" }, [L.fail_label]);
-  passBtn.addEventListener("click", () => setStatus(row, "pass"));
-  failBtn.addEventListener("click", () => setStatus(row, "fail"));
+  passBtn.addEventListener("click", () => setStatus(card, "pass"));
+  failBtn.addEventListener("click", () => setStatus(card, "fail"));
   seg.appendChild(passBtn);
   seg.appendChild(failBtn);
-  row.appendChild(seg);
+
+  const iconWrap = el("button", { class: "item-icon-btn", type: "button", title: item.name });
+  iconWrap.appendChild(el("span", { class: "item-icon" }, [item.icon || "📋"]));
+  iconWrap.appendChild(el("span", { class: "item-name" }, [item.name]));
 
   const notes = el("div", { class: "item-notes" });
   const noteInput = el("input", {
@@ -249,9 +254,12 @@ function renderItemRow(item) {
     "data-item": item.id,
   });
   notes.appendChild(noteInput);
-  row.appendChild(notes);
 
-  return row;
+  card.appendChild(iconWrap);
+  card.appendChild(seg);
+  card.appendChild(notes);
+
+  return card;
 }
 
 function setStatus(row, status) {
@@ -300,7 +308,7 @@ document.getElementById("saveReportBtn").addEventListener("click", async () => {
   const shiftId = currentShiftId;
 
   const items = [];
-  document.querySelectorAll(".item-row").forEach((row) => {
+  document.querySelectorAll(".item-card").forEach((row) => {
     const itemId = Number(row.querySelector(".item-notes input").dataset.item);
     const status = row.dataset.status || "pass";
     const notes = row.querySelector(".item-notes input").value.trim();
@@ -338,7 +346,7 @@ document.getElementById("saveReportBtn").addEventListener("click", async () => {
 });
 
 function resetForm() {
-  document.querySelectorAll(".item-row").forEach((row) => {
+  document.querySelectorAll(".item-card").forEach((row) => {
     setStatus(row, "pass");
     row.querySelector(".item-notes input").value = "";
   });
@@ -448,6 +456,7 @@ async function openReportModal(id) {
         card.appendChild(el("div", { class: "card-title" }, [section]));
         for (const it of list) {
           const row = el("div", { class: "manage-item" }, [
+            el("span", { class: "item-icon-display" }, [it.itemIcon || "📋"]),
             el("span", { class: "item-text" }, [it.itemName || `${L.item_label} #${it.inspectionItemId}`]),
             el("span", {}, [
               el("span", { class: "badge " + (it.status === "pass" ? "badge-success" : "badge-danger") }, [

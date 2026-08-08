@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS inspection_items (
   id INT AUTO_INCREMENT PRIMARY KEY,
   section_id INT NOT NULL,
   name VARCHAR(255) NOT NULL,
+  icon VARCHAR(64),
   sort_order INT NOT NULL DEFAULT 0,
   CONSTRAINT fk_item_section FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -154,6 +155,7 @@ CREATE TABLE IF NOT EXISTS inspection_items (
   id SERIAL PRIMARY KEY,
   section_id INTEGER NOT NULL,
   name VARCHAR(255) NOT NULL,
+  icon VARCHAR(64),
   sort_order INTEGER NOT NULL DEFAULT 0,
   CONSTRAINT fk_item_section FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE
 );
@@ -218,6 +220,24 @@ export async function initSchema() {
   const pool = await getPool();
   if (!pool) return;
   await pool.query(isPg ? SCHEMA_SQL_PG : SCHEMA_SQL);
+  await migrateSchema(pool);
+}
+
+async function migrateSchema(pool) {
+  try {
+    if (isPg) {
+      await pool.query(`ALTER TABLE inspection_items ADD COLUMN IF NOT EXISTS icon VARCHAR(64)`);
+    } else {
+      const [rows] = await pool.query(
+        `SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'inspection_items' AND COLUMN_NAME = 'icon'`
+      );
+      if (Number(rows?.[0]?.n || 0) === 0) {
+        await pool.query(`ALTER TABLE inspection_items ADD COLUMN icon VARCHAR(64)`);
+      }
+    }
+  } catch (e) {
+    console.error("[Database] تعذر تحديث مخطط قاعدة البيانات:", e.message);
+  }
 }
 
 // ===== قراءة / كتابة الإعدادات =====

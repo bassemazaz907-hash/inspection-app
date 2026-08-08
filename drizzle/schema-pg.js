@@ -36,6 +36,7 @@ export const inspectionItems = pgTable("inspection_items", {
     .notNull()
     .references(() => sections.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
+  icon: varchar("icon", { length: 64 }),
   order: integer("sort_order").notNull().default(0),
 });
 

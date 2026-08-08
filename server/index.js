@@ -351,7 +351,7 @@ app.get("/api/reports/:id", handle(async (req, res) => {
     ...summary,
     items: items.map((i) => {
       const item = itemMap.get(i.inspectionItemId);
-      return { ...i, itemName: item?.name ?? null, sectionName: item ? (sectionMap.get(item.sectionId)?.name ?? null) : null };
+      return { ...i, itemName: item?.name ?? null, itemIcon: item?.icon ?? null, sectionName: item ? (sectionMap.get(item.sectionId)?.name ?? null) : null };
     }),
     penalties: penRows.map((p) => ({ ...p, amount: Number(p.amount || 0), typeName: typeMap.get(p.penaltyTypeId)?.name ?? null })),
   });
@@ -552,12 +552,13 @@ app.delete("/api/admin/sections/:id", requireAdmin, handle(async (req, res) => {
 app.post("/api/admin/items", requireAdmin, handle(async (req, res) => {
   const db = await getDb();
   if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
-  const { sectionId, name } = req.body || {};
+  const { sectionId, name, icon } = req.body || {};
   if (!sectionId || !name || !name.trim()) return res.status(400).json({ error: "اسم العنصر ورقم القسم مطلوبان" });
   const rows = await db.select({ n: max(inspectionItems.order) }).from(inspectionItems).where(eq(inspectionItems.sectionId, Number(sectionId)));
   const id = await insertReturnId(db, inspectionItems, {
     sectionId: Number(sectionId),
     name: name.trim(),
+    icon: typeof icon === "string" && icon.trim() ? icon.trim() : null,
     order: (rows[0]?.n || 0) + 1,
   });
   res.json({ id });
@@ -568,6 +569,7 @@ app.put("/api/admin/items/:id", requireAdmin, handle(async (req, res) => {
   if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
   const data = {};
   if (typeof req.body?.name === "string" && req.body.name.trim()) data.name = req.body.name.trim();
+  if (req.body?.icon !== undefined) data.icon = typeof req.body.icon === "string" && req.body.icon.trim() ? req.body.icon.trim() : null;
   if (req.body?.order !== undefined) data.order = Number(req.body.order);
   if (req.body?.sectionId !== undefined) data.sectionId = Number(req.body.sectionId);
   await db.update(inspectionItems).set(data).where(eq(inspectionItems.id, Number(req.params.id)));

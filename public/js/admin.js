@@ -450,10 +450,11 @@ function renderSectionCard(section) {
   const itemsWrap = el("div", { class: "item-list" });
   for (const item of section.items) {
     const row = el("div", { class: "manage-item" });
+    row.appendChild(el("span", { class: "item-icon-display" }, [item.icon || "📋"]));
     row.appendChild(el("span", { class: "item-text" }, [item.name]));
     const actions = el("div", { class: "actions" });
     const editItemBtn = el("button", { class: "btn btn-sm btn-ghost" }, [L.edit]);
-    editItemBtn.addEventListener("click", () => editItem(section, item));
+    editItemBtn.addEventListener("click", () => editItem(section, item, row));
     const delItemBtn = el("button", { class: "btn btn-sm btn-danger-ghost" }, ["✕"]);
     delItemBtn.addEventListener("click", () => deleteItem(section, item));
     actions.appendChild(editItemBtn);
@@ -463,6 +464,9 @@ function renderSectionCard(section) {
   }
   card.appendChild(itemsWrap);
 
+  const addWrap = el("div", { class: "inline-add-block" });
+  addWrap.appendChild(el("div", { class: "inline-add-label" }, [L.add_item]));
+  addWrap.appendChild(renderIconPicker("", (ic) => (pendingItemIcon = ic)));
   const addRow = el("div", { class: "inline-add" });
   const input = el("input", { type: "text", placeholder: L.item_name_placeholder || L.item_label });
   const btn = el("button", { class: "btn btn-success btn-sm" }, [L.add]);
@@ -472,9 +476,32 @@ function renderSectionCard(section) {
   });
   addRow.appendChild(input);
   addRow.appendChild(btn);
-  card.appendChild(addRow);
+  addWrap.appendChild(addRow);
+  card.appendChild(addWrap);
 
   return card;
+}
+
+let pendingItemIcon = "";
+
+function renderIconPicker(selected, onPick) {
+  const wrap = el("div", { class: "icon-picker" });
+  const chips = el("div", { class: "icon-picker-chips" });
+  for (const ic of ITEM_ICONS) {
+    const chip = el("button", {
+      type: "button",
+      class: "icon-chip" + (ic === selected ? " active" : ""),
+      title: ic,
+      onclick: () => {
+        chips.querySelectorAll(".icon-chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        onPick(ic);
+      },
+    }, [ic]);
+    chips.appendChild(chip);
+  }
+  wrap.appendChild(chips);
+  return wrap;
 }
 
 async function addSection() {
@@ -517,7 +544,8 @@ async function addItem(section, input) {
   const name = input.value.trim();
   if (!name) return;
   try {
-    await api("/api/admin/items", { method: "POST", body: JSON.stringify({ sectionId: section.id, name }) });
+    await api("/api/admin/items", { method: "POST", body: JSON.stringify({ sectionId: section.id, name, icon: pendingItemIcon || null }) });
+    pendingItemIcon = "";
     toast(`${L.add} ✓`, "success", "✅");
     loadSections();
   } catch (e) {
@@ -525,15 +553,36 @@ async function addItem(section, input) {
   }
 }
 
-async function editItem(section, item) {
-  const name = prompt(L.item_label, item.name);
-  if (!name || name.trim() === item.name) return;
-  try {
-    await api(`/api/admin/items/${item.id}`, { method: "PUT", body: JSON.stringify({ name: name.trim() }) });
-    loadSections();
-  } catch (e) {
-    toast(e.message, "error", "⚠️");
-  }
+function editItem(section, item, row) {
+  const editor = el("div", { class: "manage-item manage-edit" });
+  const icon = el("span", { class: "item-icon-display" }, [item.icon || "📋"]);
+  editor.appendChild(icon);
+  const nameInput = el("input", { type: "text", value: item.name, class: "inline-edit-input" });
+  editor.appendChild(nameInput);
+  const actions = el("div", { class: "actions" });
+  const saveBtn = el("button", { class: "btn btn-sm btn-success" }, [L.save]);
+  const cancelBtn = el("button", { class: "btn btn-sm btn-ghost" }, [L.cancel]);
+  const picker = renderIconPicker(item.icon || "", (ic) => {
+    item.icon = ic;
+    icon.textContent = ic;
+  });
+  saveBtn.addEventListener("click", async () => {
+    const name = nameInput.value.trim();
+    if (!name) return;
+    try {
+      await api(`/api/admin/items/${item.id}`, { method: "PUT", body: JSON.stringify({ name, icon: item.icon || null }) });
+      loadSections();
+    } catch (e) {
+      toast(e.message, "error", "⚠️");
+    }
+  });
+  cancelBtn.addEventListener("click", () => loadSections());
+  actions.appendChild(saveBtn);
+  actions.appendChild(cancelBtn);
+  editor.appendChild(actions);
+  row.replaceWith(editor);
+  picker.style.gridColumn = "1 / -1";
+  editor.appendChild(picker);
 }
 
 async function deleteItem(section, item) {
@@ -766,6 +815,7 @@ async function openReportModal(id) {
         card.appendChild(el("div", { class: "card-title" }, [section]));
         for (const it of list) {
           const row = el("div", { class: "manage-item" }, [
+            el("span", { class: "item-icon-display" }, [it.itemIcon || "📋"]),
             el("span", { class: "item-text" }, [it.itemName || `${L.item_label} #${it.inspectionItemId}`]),
             el("span", {}, [
               el("span", { class: "badge " + (it.status === "pass" ? "badge-success" : "badge-danger") }, [
