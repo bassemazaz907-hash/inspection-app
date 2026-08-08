@@ -353,6 +353,15 @@ body {
   display: none;
 }
 
+/* ===== أقسام التبويبات (إظهار القسم النشط فقط) ===== */
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
 .tab-strip {
   display: none;
   gap: 8px;
