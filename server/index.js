@@ -648,6 +648,7 @@ app.delete("/api/admin/reports/:id", requireAdmin, handle(async (req, res) => {
 
 // ==================== تشغيل ====================
 app.get("/admin", (req, res) => res.redirect("/admin.html"));
+app.get("/reports", (req, res) => res.redirect("/reports.html"));
 
 app.listen(PORT, async () => {
   try {

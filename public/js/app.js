@@ -2,7 +2,6 @@
 let sectionsData = [];
 let shiftsData = [];
 let penaltyTypesData = [];
-let currentFilters = {};
 let currentShiftId = null;
 let currentPenaltyIds = new Set();
 
@@ -80,8 +79,6 @@ function handleEvent(ev) {
     toast(msg, "info", "🔔");
     playBeep();
     showBrowserNotification(msg);
-    const active = document.querySelector(".view.active");
-    if (active && active.id === "view-reports") loadReports();
   } else if (ev.type === "settings") {
     if (ev.title) applyLabels(ev.labels);
     if (ev.theme) applyTheme(ev.theme);
@@ -126,8 +123,6 @@ async function init() {
   document.getElementById("reportDate").value = todayStr();
   renderPenaltyRows();
   setupTabs();
-  setupFilters();
-  loadReports();
   connectEvents();
 }
 
@@ -139,19 +134,15 @@ async function loadSections() {
 async function loadShifts() {
   shiftsData = await api("/api/shifts");
   const container = document.getElementById("shiftChips");
-  const filterShift = document.getElementById("filterShift");
   container.innerHTML = "";
-  filterShift.innerHTML = "";
   if (!shiftsData.length) {
     container.appendChild(el("div", { class: "chip-group" }, [el("span", { class: "chip disabled" }, [L.no_shifts])]));
     return;
   }
-  filterShift.appendChild(el("option", { value: "" }, [L.all_shifts]));
   for (const s of shiftsData) {
     const chip = el("button", { type: "button", class: "chip", onclick: () => selectShift(s.id, chip) }, [s.name]);
     chip.dataset.id = s.id;
     container.appendChild(chip);
-    filterShift.appendChild(el("option", { value: s.id }, [s.name]));
   }
 }
 
@@ -334,7 +325,6 @@ document.getElementById("saveReportBtn").addEventListener("click", async () => {
     });
     toast(`${L.report_label} ${L.save} ✓`, "success", "✅");
     resetForm();
-    loadReports();
   } catch (e) {
     toast(e.message, "error", "⚠️");
   } finally {
@@ -365,149 +355,8 @@ function setupTabs() {
       const view = btn.dataset.view;
       document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
       document.getElementById(`view-${view}`).classList.add("active");
-      if (view === "reports") loadReports();
     });
   });
 }
-
-// ===== قائمة التقارير =====
-function setupFilters() {
-  document.getElementById("filterBtn").addEventListener("click", () => {
-    currentFilters = {
-      startDate: document.getElementById("filterStart").value,
-      endDate: document.getElementById("filterEnd").value,
-      shiftId: document.getElementById("filterShift").value,
-      search: document.getElementById("filterSearch").value.trim().toLowerCase(),
-    };
-    loadReports();
-  });
-  document.getElementById("filterSearch").addEventListener("input", () => {
-    currentFilters = { ...currentFilters, search: document.getElementById("filterSearch").value.trim().toLowerCase() };
-    loadReports();
-  });
-}
-
-function buildQuery() {
-  const params = new URLSearchParams();
-  if (currentFilters.startDate) params.set("startDate", currentFilters.startDate);
-  if (currentFilters.endDate) params.set("endDate", currentFilters.endDate);
-  if (currentFilters.shiftId) params.set("shiftId", currentFilters.shiftId);
-  const q = params.toString();
-  return q ? `?${q}` : "";
-}
-
-async function loadReports() {
-  const tbody = document.getElementById("reportsTableBody");
-  tbody.innerHTML = "";
-  try {
-    const reports = await api(`/api/reports${buildQuery()}`);
-    let visible = 0;
-    for (const r of reports) {
-      const tr = renderReportRow(r);
-      const haystack = `${r.id} ${r.reportDate} ${r.shiftName || ""}`.toLowerCase();
-      if (currentFilters.search && !haystack.includes(currentFilters.search)) continue;
-      visible++;
-      tbody.appendChild(tr);
-    }
-    document.getElementById("reportsEmpty").style.display = visible ? "none" : "block";
-  } catch (e) {
-    toast(e.message, "error", "⚠️");
-  }
-}
-
-function renderReportRow(r) {
-  const tr = el("tr", {});
-  tr.appendChild(el("td", {}, [r.id]));
-  tr.appendChild(el("td", {}, [r.reportDate]));
-  tr.appendChild(el("td", {}, [r.shiftName || "-"]));
-  tr.appendChild(el("td", {}, [r.totalItems]));
-  tr.appendChild(
-    el("td", {}, [el("span", { class: "badge badge-success" }, [`${r.passed} ✓`])])
-  );
-  tr.appendChild(
-    el("td", {}, [
-      el("span", { class: "badge " + (r.failed ? "badge-danger" : "badge-muted") }, [`${r.failed} ✕`]),
-    ])
-  );
-  tr.appendChild(el("td", {}, [r.penaltiesCount ? `${r.penaltiesCount}` : "—"]));
-  const viewBtn = el("button", { class: "btn btn-sm btn-ghost" }, [L.view]);
-  viewBtn.addEventListener("click", () => openReportModal(r.id));
-  tr.appendChild(el("td", {}, [viewBtn]));
-  return tr;
-}
-
-// ===== تفاصيل التقرير =====
-async function openReportModal(id) {
-  const overlay = document.getElementById("reportModal");
-  const body = document.getElementById("modalBody");
-  body.innerHTML = "";
-  overlay.classList.add("open");
-  try {
-    const r = await api(`/api/reports/${id}`);
-    document.getElementById("modalTitle").textContent = `${L.report_label} #${r.id}`;
-
-    const meta = el("div", { class: "card", style: "margin-bottom:12px" }, [
-      el("p", { style: "margin-bottom:6px" }, [`${L.date_label}: ${r.reportDate}`]),
-      el("p", { style: "margin-bottom:6px" }, [`${L.shift_label}: ${r.shiftName || "-"}`]),
-      r.notes ? el("p", {}, [`${L.general_notes}: ${r.notes}`]) : null,
-    ].filter(Boolean));
-
-    body.appendChild(meta);
-
-    if (r.items.length) {
-      const bySection = {};
-      for (const it of r.items) {
-        const key = it.sectionName || L.section_label;
-        (bySection[key] = bySection[key] || []).push(it);
-      }
-      for (const [section, list] of Object.entries(bySection)) {
-        const card = el("div", { class: "card", style: "margin-bottom:12px" });
-        card.appendChild(el("div", { class: "card-title" }, [section]));
-        for (const it of list) {
-          const row = el("div", { class: "manage-item" }, [
-            el("span", { class: "item-icon-display" }, [it.itemIcon || "📋"]),
-            el("span", { class: "item-text" }, [it.itemName || `${L.item_label} #${it.inspectionItemId}`]),
-            el("span", {}, [
-              el("span", { class: "badge " + (it.status === "pass" ? "badge-success" : "badge-danger") }, [
-                it.status === "pass" ? L.pass_label : L.fail_label,
-              ]),
-              it.notes
-                ? el("span", { class: "badge badge-muted", style: "margin-inline-start:6px" }, [it.notes])
-                : null,
-            ]),
-          ]);
-          card.appendChild(row);
-        }
-        body.appendChild(card);
-      }
-    }
-
-    if (r.penalties.length) {
-      const card = el("div", { class: "card", style: "margin-bottom:12px" });
-      card.appendChild(el("div", { class: "card-title" }, [L.penalties_label]));
-      for (const p of r.penalties) {
-        const row = el("div", { class: "manage-item" }, [
-          el("span", { class: "item-text" }, [p.typeName || `${L.penalty_label} #${p.penaltyTypeId}`]),
-          p.note ? el("span", {}, [p.note]) : null,
-        ]);
-        card.appendChild(row);
-      }
-      body.appendChild(card);
-    }
-
-    if (!r.items.length && !r.penalties.length) {
-      body.appendChild(el("div", { class: "empty" }, [L.no_reports]));
-    }
-  } catch (e) {
-    body.appendChild(el("div", { class: "empty" }, [e.message]));
-  }
-}
-
-function closeReportModal() {
-  document.getElementById("reportModal").classList.remove("open");
-}
-document.getElementById("reportModal").addEventListener("click", (e) => {
-  if (e.target === document.getElementById("reportModal")) closeReportModal();
-});
 
 init();

@@ -925,7 +925,8 @@ tbody tr:last-child td {
   gap: 10px;
 }
 
-.page-index .toast-wrap {
+.page-index .toast-wrap,
+.page-reports .toast-wrap {
   bottom: calc(84px + env(safe-area-inset-bottom));
 }
 
@@ -1561,7 +1562,8 @@ tbody tr:last-child td {
     display: flex;
   }
 
-  .page-index .main {
+  .page-index .main,
+  .page-reports .main {
     padding-bottom: calc(96px + env(safe-area-inset-bottom));
   }
 
