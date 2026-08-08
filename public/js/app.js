@@ -377,7 +377,12 @@ function setupFilters() {
       startDate: document.getElementById("filterStart").value,
       endDate: document.getElementById("filterEnd").value,
       shiftId: document.getElementById("filterShift").value,
+      search: document.getElementById("filterSearch").value.trim().toLowerCase(),
     };
+    loadReports();
+  });
+  document.getElementById("filterSearch").addEventListener("input", () => {
+    currentFilters = { ...currentFilters, search: document.getElementById("filterSearch").value.trim().toLowerCase() };
     loadReports();
   });
 }
@@ -396,8 +401,15 @@ async function loadReports() {
   tbody.innerHTML = "";
   try {
     const reports = await api(`/api/reports${buildQuery()}`);
-    document.getElementById("reportsEmpty").style.display = reports.length ? "none" : "block";
-    for (const r of reports) tbody.appendChild(renderReportRow(r));
+    let visible = 0;
+    for (const r of reports) {
+      const tr = renderReportRow(r);
+      const haystack = `${r.id} ${r.reportDate} ${r.shiftName || ""}`.toLowerCase();
+      if (currentFilters.search && !haystack.includes(currentFilters.search)) continue;
+      visible++;
+      tbody.appendChild(tr);
+    }
+    document.getElementById("reportsEmpty").style.display = visible ? "none" : "block";
   } catch (e) {
     toast(e.message, "error", "⚠️");
   }
