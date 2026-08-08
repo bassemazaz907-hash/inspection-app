@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="لوحة التحكم" />
   <link rel="manifest" href="/manifest.json" />
-  <link rel="icon" href="/icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="icon" href="/app-icon.png" />
+  <link rel="apple-touch-icon" href="/app-icon.png" />
   <title>لوحة التحكم</title>
   <script>
     try {
@@ -190,6 +190,16 @@
                 <button class="btn btn-sm btn-danger-ghost" id="logoRemoveBg"><span data-label="logo_remove">إزالة</span></button>
               </div>
               <div class="logo-hint" data-label="logo_choose_hint">PNG أو JPG أو WebP — حتى 2 ميجا</div>
+            </div>
+            <div class="logo-manager">
+              <label class="theme-label" data-label="logo_icon_label">أيقونة التطبيق (شاشة الهاتف)</label>
+              <div class="logo-preview"><img id="logoPreviewIcon" alt="" style="display:none" /></div>
+              <div class="logo-actions">
+                <input type="file" id="logoFileIcon" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none" />
+                <button class="btn btn-sm" id="logoChooseIcon"><span data-label="logo_choose">اختر صورة</span></button>
+                <button class="btn btn-sm btn-danger-ghost" id="logoRemoveIcon"><span data-label="logo_remove">إزالة</span></button>
+              </div>
+              <div class="logo-hint" data-label="logo_icon_hint">صورة مربعة PNG 512×512 — حذف وإعادة تثبيت بعد التغيير</div>
             </div>
           </div>
         </div>

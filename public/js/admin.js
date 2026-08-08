@@ -184,6 +184,7 @@ function renderLogoManager() {
   const previews = [
     { id: "logoPreviewBrand", url: LOGOS.brand },
     { id: "logoPreviewBg", url: LOGOS.bg },
+    { id: "logoPreviewIcon", url: LOGOS.icon },
   ];
   for (const p of previews) {
     const img = document.getElementById(p.id);
@@ -410,6 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setupLogoPicker("brand", "logoFileBrand", "logoChooseBrand", "logoRemoveBrand");
   setupLogoPicker("bg", "logoFileBg", "logoChooseBg", "logoRemoveBg");
+  setupLogoPicker("icon", "logoFileIcon", "logoChooseIcon", "logoRemoveIcon");
 });
 
 // ===== الأقسام والعناصر =====

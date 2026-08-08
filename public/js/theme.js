@@ -153,6 +153,8 @@ const DEFAULT_LABELS = {
   logos_title: "اللوجوهات",
   logo_brand_label: "لوجو أعلى الصفحة (الزر)",
   logo_bg_label: "لوجو الخلفية",
+  logo_icon_label: "أيقونة التطبيق (شاشة الهاتف)",
+  logo_icon_hint: "تُستخدم أيقونة التطبيق بعد تثبيته على الهاتف — يُفضل صورة مربعة PNG بحجم 512×512. يرجى حذف التطبيق وإعادة تثبيته بعد تغيير الأيقونة حتى تُحدَّث على بعض الهواتف.",
   logo_choose: "اختر صورة",
   logo_upload: "رفع",
   logo_remove: "إزالة",
@@ -249,6 +251,8 @@ const LABEL_FIELDS = [
       { key: "logos_title", label: "عنوان: اللوجوهات" },
       { key: "logo_brand_label", label: "اللوجو: أعلى الصفحة" },
       { key: "logo_bg_label", label: "اللوجو: الخلفية" },
+      { key: "logo_icon_label", label: "اللوجو: أيقونة التطبيق" },
+      { key: "logo_icon_hint", label: "نص إرشادي: أيقونة التطبيق" },
       { key: "logo_choose", label: "زر: اختيار صورة" },
       { key: "logo_upload", label: "زر: رفع" },
       { key: "logo_remove", label: "زر: إزالة" },
@@ -261,7 +265,7 @@ const LABEL_FIELDS = [
 let L = { ...DEFAULT_LABELS };
 
 // ===== اللوجوهات =====
-const DEFAULT_LOGOS = { brand: "", bg: "" };
+const DEFAULT_LOGOS = { brand: "", bg: "", icon: "" };
 let LOGOS = { ...DEFAULT_LOGOS };
 
 function applyLogos(logos) {
@@ -293,6 +297,11 @@ function applyLogos(logos) {
       bg.style.display = "none";
     }
   }
+
+  const favicon = document.querySelector('link[rel="icon"]');
+  const appleTouch = document.querySelector('link[rel="apple-touch-icon"]');
+  if (favicon) favicon.href = "/app-icon.png";
+  if (appleTouch) appleTouch.href = "/app-icon.png";
 }
 
 // ===== الوضع الليلي =====

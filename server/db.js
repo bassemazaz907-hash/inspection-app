@@ -250,12 +250,13 @@ export async function setSetting(key, value) {
 
 // ===== إعدادات التطبيق =====
 export async function getAppSettings() {
-  const [title, themeRaw, labelsRaw, logoBrand, logoBg] = await Promise.all([
+  const [title, themeRaw, labelsRaw, logoBrand, logoBg, logoIcon] = await Promise.all([
     getSetting("title"),
     getSetting("theme"),
     getSetting("labels"),
     getSetting("logo_brand"),
     getSetting("logo_bg"),
+    getSetting("logo_icon"),
   ]);
   let theme = null;
   let labels = null;
@@ -277,7 +278,7 @@ export async function getAppSettings() {
     title: title || null,
     theme,
     labels,
-    logos: { brand: logoBrand || "", bg: logoBg || "" },
+    logos: { brand: logoBrand || "", bg: logoBg || "", icon: logoIcon || "" },
   };
 }
 
@@ -288,5 +289,6 @@ export async function saveAppSettings({ title, theme, labels, logos } = {}) {
   if (logos !== undefined) {
     if (logos.brand !== undefined) await setSetting("logo_brand", logos.brand);
     if (logos.bg !== undefined) await setSetting("logo_bg", logos.bg);
+    if (logos.icon !== undefined) await setSetting("logo_icon", logos.icon);
   }
 }

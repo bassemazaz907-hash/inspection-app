@@ -5,6 +5,7 @@ export const DEFAULT_TITLE = "نظام الفحص اليومي";
 export const DEFAULT_LOGOS = {
   brand: "", // لوجو أعلى الصفحة (زر العودة للرئيسية)
   bg: "", // لوجو الخلفية
+  icon: "", // أيقونة التطبيق (PWA) التي تظهر بعد التثبيت
 };
 
 export const ALLOWED_LOGO_SLOTS = new Set(Object.keys(DEFAULT_LOGOS));
@@ -177,6 +178,8 @@ export const DEFAULT_LABELS = {
   logos_title: "اللوجوهات",
   logo_brand_label: "لوجو أعلى الصفحة (الزر)",
   logo_bg_label: "لوجو الخلفية",
+  logo_icon_label: "أيقونة التطبيق (شاشة الهاتف)",
+  logo_icon_hint: "تُستخدم أيقونة التطبيق بعد تثبيته على الهاتف — يُفضل صورة مربعة PNG بحجم 512×512. يرجى حذف التطبيق وإعادة تثبيته بعد تغيير الأيقونة حتى تُحدَّث على بعض الهواتف.",
   logo_choose: "اختر صورة",
   logo_upload: "رفع",
   logo_remove: "إزالة",
@@ -291,6 +294,8 @@ export const LABEL_FIELDS = [
       { key: "logos_title", label: "عنوان: اللوجوهات" },
       { key: "logo_brand_label", label: "اللوجو: أعلى الصفحة" },
       { key: "logo_bg_label", label: "اللوجو: الخلفية" },
+      { key: "logo_icon_label", label: "اللوجو: أيقونة التطبيق" },
+      { key: "logo_icon_hint", label: "نص إرشادي: أيقونة التطبيق" },
       { key: "logo_choose", label: "زر: اختيار صورة" },
       { key: "logo_upload", label: "زر: رفع" },
       { key: "logo_remove", label: "زر: إزالة" },

@@ -159,6 +159,43 @@ function handle(fn) {
   };
 }
 
+// ==================== أيقونة التطبيق (PWA) ====================
+// تُرجِع الصورة الحالية للأيقونة مهما كان نوع التخزين (dataUrl على Postgres أو ملف على MySQL)
+app.get("/app-icon.png", handle(async (req, res) => {
+  let icon = "";
+  try {
+    icon = await getSetting("logo_icon");
+  } catch (e) {}
+  const fallback = "/icons/icon-192.png";
+
+  if (!icon) return res.redirect(fallback);
+
+  if (icon.startsWith("data:image/")) {
+    const m = icon.match(/^data:(image\/(png|jpeg|webp|gif));base64,(.+)$/);
+    if (!m) return res.redirect(fallback);
+    const buf = Buffer.from(m[3], "base64");
+    if (!buf.length) return res.redirect(fallback);
+    res.set("Content-Type", m[1]);
+    res.set("Cache-Control", "no-store");
+    return res.send(buf);
+  }
+
+  if (icon.startsWith("/uploads/")) {
+    const file = path.join(UPLOAD_DIR, path.basename(icon));
+    try {
+      const buf = await fs.readFile(file);
+      if (!buf.length) return res.redirect(fallback);
+      res.set("Content-Type", "image/png");
+      res.set("Cache-Control", "no-store");
+      return res.send(buf);
+    } catch (e) {
+      return res.redirect(fallback);
+    }
+  }
+
+  res.redirect(fallback);
+}));
+
 // ==================== إعدادات عامة (بدون حماية) ====================
 app.get("/api/settings/public", handle(async (req, res) => {
   const current = await getAppSettings();
