@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -611,12 +611,12 @@ app.delete("/api/admin/shifts/:id", requireAdmin, handle(async (req, res) => {
   res.json({ ok: true });
 }));
 
-// ==================== إدارة أنواع الغرامات ====================
+// ==================== إدارة أنواع الجزاءات ====================
 app.post("/api/admin/penalty-types", requireAdmin, handle(async (req, res) => {
   const db = await getDb();
   if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
   const { name, amount } = req.body || {};
-  if (!name || !name.trim()) return res.status(400).json({ error: "اسم الغرامة مطلوب" });
+  if (!name || !name.trim()) return res.status(400).json({ error: "اسم الجزاء مطلوب" });
   const id = await insertReturnId(db, penaltyTypes, { name: name.trim(), amount: String(Number(amount || 0)) });
   res.json({ id });
 }));

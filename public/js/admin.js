@@ -1,4 +1,4 @@
-// ===== الحالة =====
+﻿// ===== الحالة =====
 let token = localStorage.getItem("adminToken") || null;
 let themeDraft = {};
 let sectionsData = [];
@@ -658,7 +658,7 @@ async function deleteShift(shift) {
   }
 }
 
-// ===== أنواع الغرامات =====
+// ===== أنواع الجزاءات =====
 async function loadPenaltyTypes() {
   penaltyTypesData = await api("/api/penalty-types");
   const container = document.getElementById("penaltyTypesList");

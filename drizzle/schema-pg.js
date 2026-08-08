@@ -1,4 +1,4 @@
-import {
+﻿import {
   pgTable,
   serial,
   varchar,
@@ -47,7 +47,7 @@ export const shifts = pgTable("shifts", {
   order: integer("sort_order").notNull().default(0),
 });
 
-// ===== أنواع الغرامات =====
+// ===== أنواع الجزاءات =====
 export const penaltyTypes = pgTable("penalty_types", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -76,7 +76,7 @@ export const reportItems = pgTable("report_items", {
   notes: text("notes"),
 });
 
-// ===== الغرامات =====
+// ===== الجزاءات =====
 export const penalties = pgTable("penalties", {
   id: serial("id").primaryKey(),
   reportId: integer("report_id")

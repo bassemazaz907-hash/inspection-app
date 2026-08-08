@@ -1,4 +1,4 @@
-// ===== الحالة =====
+﻿// ===== الحالة =====
 let sectionsData = [];
 let shiftsData = [];
 let penaltyTypesData = [];
@@ -269,7 +269,7 @@ function setStatus(row, status) {
   row.dataset.status = status;
 }
 
-// ===== الغرامات =====
+// ===== الجزاءات =====
 function renderPenaltyRows() {
   const container = document.getElementById("penaltyRows");
   container.innerHTML = "";

@@ -1,4 +1,4 @@
-import {
+﻿import {
   mysqlTable,
   int,
   varchar,
@@ -45,7 +45,7 @@ export const shifts = mysqlTable("shifts", {
   order: int("sort_order").notNull().default(0),
 });
 
-// ===== أنواع الغرامات =====
+// ===== أنواع الجزاءات =====
 export const penaltyTypes = mysqlTable("penalty_types", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -74,7 +74,7 @@ export const reportItems = mysqlTable("report_items", {
   notes: text("notes"),
 });
 
-// ===== الغرامات =====
+// ===== الجزاءات =====
 export const penalties = mysqlTable("penalties", {
   id: int("id").autoincrement().primaryKey(),
   reportId: int("report_id")

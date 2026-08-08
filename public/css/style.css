@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --color-primary: #1d4ed8;
   --color-secondary: #0ea5e9;
   --color-header-bg: #0f172a;
@@ -768,7 +768,7 @@ body {
   box-shadow: 0 3px 8px rgba(220, 38, 38, 0.35);
 }
 
-/* ===== الغرامات ===== */
+/* ===== الجزاءات ===== */
 .penalty-row {
   display: grid;
   grid-template-columns: 1fr 110px 1fr 40px;
