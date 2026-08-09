@@ -255,6 +255,14 @@ body {
   border-radius: 10px;
 }
 
+.brand-logo-appbar {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 10px;
+  display: none;
+}
+
 .app-bar-title span:last-child {
   white-space: nowrap;
   overflow: hidden;
@@ -1252,35 +1260,6 @@ tbody tr:last-child td {
   background-position: center;
   background-size: min(360px, 62%) auto;
   opacity: 0.1;
-  display: none;
-}
-
-.logo-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  transition: background 0.15s, transform 0.1s;
-}
-
-.logo-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.logo-btn:active {
-  transform: scale(0.93);
-}
-
-.logo-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 6px;
   display: none;
 }
 

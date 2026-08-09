@@ -294,8 +294,9 @@ function applyLogos(logos) {
       if (icon) icon.style.display = "flex";
     }
   };
-  applyBrand("brandLogoImg", "brandIconDefault");
+  applyBrand("brandLogoAppBar", "brandIconAppBar");
   applyBrand("brandLogoImgSide", "brandIconSide");
+  applyBrand("brandLogoImgSide", "brandIconDefault");
 
   const bg = document.getElementById("bgLogo");
   if (bg) {
