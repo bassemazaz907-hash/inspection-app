@@ -575,10 +575,24 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+function translateServerLabels(labels) {
+  const out = {};
+  for (const [key, value] of Object.entries(labels || {})) {
+    if (!value) continue;
+    if (DEFAULT_LABELS[key] !== undefined && value === DEFAULT_LABELS[key] && DEFAULT_LABELS_EN[key]) {
+      out[key] = DEFAULT_LABELS_EN[key];
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 function applyLabels(labels) {
   lastServerLabels = labels;
   const base = langMode === "en" ? DEFAULT_LABELS_EN : DEFAULT_LABELS;
-  L = { ...base, ...(langMode === "ar" ? (labels || {}) : {}) };
+  const custom = langMode === "ar" ? (labels || {}) : translateServerLabels(labels);
+  L = { ...base, ...custom };
   document.querySelectorAll("[data-label]").forEach((el) => {
     const key = el.getAttribute("data-label");
     if (key && L[key]) el.textContent = L[key];
