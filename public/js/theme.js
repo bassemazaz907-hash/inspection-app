@@ -99,7 +99,7 @@ const DEFAULT_LABELS = {
   login_title: "لوحة التحكم",
   login_password: "كلمة المرور",
   login_btn: "دخول",
-  login_hint: "كلمة المرور الافتراضية: admin123 (غيّرها بعد الدخول من الإعدادات)",
+  login_hint: "",
   logout_btn: "تسجيل الخروج",
   preview_site: "معاينة الموقع",
   overview: "نظرة عامة",

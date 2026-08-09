@@ -1575,13 +1575,6 @@ tbody tr:last-child td {
   text-align: right;
 }
 
-.login-hint {
-  margin-top: 16px;
-  font-size: 0.8em;
-  color: var(--color-text-muted);
-  line-height: 1.5;
-}
-
 .login-error {
   margin-top: 12px;
   padding: 10px 14px;
