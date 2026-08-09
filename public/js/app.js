@@ -124,6 +124,15 @@ async function init() {
   renderPenaltyRows();
   setupTabs();
   connectEvents();
+  hideSplash();
+}
+
+function hideSplash() {
+  const splash = document.getElementById("splash");
+  if (splash) {
+    splash.classList.add("hidden");
+    setTimeout(() => splash.remove(), 600);
+  }
 }
 
 async function loadSections() {

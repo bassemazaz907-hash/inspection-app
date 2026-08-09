@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "نظام الفحص اليومي",
-  "short_name": "الفحص اليومي",
-  "description": "نظام الفحص اليومي للمعدات والمصانع",
+  "name": "ELDGAGA APP",
+  "short_name": "ELDGAGA APP",
+  "description": "ELDGAGA APP",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "/",

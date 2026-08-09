@@ -1,6 +1,6 @@
 ﻿// ===== الإعدادات الافتراضية =====
 
-export const DEFAULT_TITLE = "نظام الفحص اليومي";
+export const DEFAULT_TITLE = "ELDGAGA APP";
 
 export const DEFAULT_LOGOS = {
   brand: "", // لوجو أعلى الصفحة (زر العودة للرئيسية)
@@ -74,7 +74,7 @@ export function mergeTheme(savedTheme) {
 
 // ===== مسميات الواجهة الافتراضية =====
 export const DEFAULT_LABELS = {
-  title: "نظام الفحص اليومي",
+  title: "ELDGAGA APP",
   date_label: "التاريخ",
   section_label: "القسم",
   shift_label: "الوردية",

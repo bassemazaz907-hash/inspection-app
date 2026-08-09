@@ -49,7 +49,7 @@ const THEME_COLOR_FIELDS = [
 ];
 
 const DEFAULT_LABELS = {
-  title: "نظام الفحص اليومي",
+  title: "ELDGAGA APP",
   date_label: "التاريخ",
   section_label: "القسم",
   shift_label: "الوردية",
@@ -312,6 +312,25 @@ function applyLogos(logos) {
   const appleTouch = document.querySelector('link[rel="apple-touch-icon"]');
   if (favicon) favicon.href = "/app-icon.png";
   if (appleTouch) appleTouch.href = "/app-icon.png";
+
+  const splashLogo = document.getElementById("splashLogo");
+  if (splashLogo) {
+    if (LOGOS.brand) {
+      splashLogo.innerHTML = "";
+      const img = document.createElement("img");
+      img.src = LOGOS.brand;
+      img.alt = "";
+      splashLogo.appendChild(img);
+    } else if (LOGOS.icon) {
+      splashLogo.innerHTML = "";
+      const img = document.createElement("img");
+      img.src = LOGOS.icon;
+      img.alt = "";
+      splashLogo.appendChild(img);
+    } else {
+      splashLogo.innerHTML = "✓";
+    }
+  }
 }
 
 // ===== الوضع الليلي =====
