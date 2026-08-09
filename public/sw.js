@@ -1,4 +1,4 @@
-const CACHE = "inspection-v2";
+const CACHE = "inspection-v3";
 const CORE = ["/", "/index.html", "/admin.html", "/css/style.css", "/js/theme.js", "/js/app.js", "/js/admin.js", "/js/pwa.js", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -24,13 +24,19 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.open(CACHE).then(async (cache) => {
+      const cached = await cache.match(req, { ignoreSearch: true });
+      if (cached) {
+        // stale-while-revalidate: اخدم من الكاش فوراً وحدّث في الخلفية
+        fetch(req).then((fresh) => {
+          if (fresh && fresh.ok) cache.put(req, fresh);
+        }).catch(() => {});
+        return cached;
+      }
       try {
         const fresh = await fetch(req);
-        cache.put(req, fresh.clone());
+        if (fresh && fresh.ok) cache.put(req, fresh.clone());
         return fresh;
       } catch (err) {
-        const cached = await cache.match(req);
-        if (cached) return cached;
         if (req.mode === "navigate") return cache.match("/index.html");
         return new Response("", { status: 408 });
       }

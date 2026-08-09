@@ -96,16 +96,28 @@ function showBrowserNotification(body) {
 }
 
 // ===== التحميل الأولي =====
+function applyCachedSettings(settings) {
+  try {
+    if (!settings) return;
+    applyTheme(settings.theme);
+    applyLabels(settings.labels);
+    applyLogos(settings.logos);
+  } catch (e) {}
+}
+
 async function init() {
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission().catch(() => {});
   }
 
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem("settings_cache") || "null"); } catch (e) {}
+  applyCachedSettings(cached);
+
   try {
     const settings = await api("/api/settings/public");
-    applyTheme(settings.theme);
-    applyLabels(settings.labels);
-    applyLogos(settings.logos);
+    try { localStorage.setItem("settings_cache", JSON.stringify(settings)); } catch (e) {}
+    applyCachedSettings(settings);
   } catch (e) {
     applyTheme(null);
     applyLabels(null);
