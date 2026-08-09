@@ -150,7 +150,7 @@ body {
   font-size: 0.97em;
   font-weight: 600;
   cursor: pointer;
-  text-align: right;
+  text-align: start;
   text-decoration: none;
   transition: background 0.18s, color 0.18s, transform 0.1s;
 }
@@ -858,7 +858,7 @@ table {
 th,
 td {
   padding: 12px 14px;
-  text-align: right;
+  text-align: start;
   border-bottom: 1px solid var(--color-card-border);
   white-space: nowrap;
 }
@@ -1572,7 +1572,19 @@ tbody tr:last-child td {
 }
 
 .login-card .field {
-  text-align: right;
+  text-align: start;
+}
+
+.login-brand {
+  position: relative;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.login-lang-toggle {
+  position: absolute;
+  top: -8px;
+  inset-inline-end: -8px;
 }
 
 .login-error {
@@ -1583,11 +1595,6 @@ tbody tr:last-child td {
   color: var(--color-danger);
   font-size: 0.88em;
   font-weight: 600;
-}
-
-.login-brand {
-  justify-content: center;
-  margin-bottom: 18px;
 }
 
 /* ===== الرد (الموبايل) ===== */

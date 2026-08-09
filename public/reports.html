@@ -20,6 +20,12 @@
       document.documentElement.dataset.theme = m;
     } catch (e) {}
   </script>
+  <script>
+    try {
+      document.documentElement.lang = localStorage.getItem("lang_mode") === "en" ? "en" : "ar";
+      document.documentElement.dir = localStorage.getItem("lang_mode") === "en" ? "ltr" : "rtl";
+    } catch (e) {}
+  </script>
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/theme.js"></script>
 </head>
@@ -35,6 +41,7 @@
       </a>
       <div class="app-bar-actions">
         <span class="icon-btn ghost-light" title="البث المباشر"><span class="live-dot"></span></span>
+        <button class="icon-btn" id="langToggle" title="English">EN</button>
         <button class="icon-btn" id="themeToggle" title="الوضع الليلي">🌙</button>
         <button class="icon-btn" id="installBtn" title="تثبيت التطبيق" style="display:none">⬇️</button>
       </div>
@@ -91,8 +98,8 @@
               <select id="filterShift"></select>
             </div>
             <div class="field">
-              <label>بحث بالاسم</label>
-              <input type="text" id="filterSearch" placeholder="اكتب اسم الوردية أو رقم التقرير أو التاريخ..." />
+              <label data-label="search_label">بحث بالاسم</label>
+              <input type="text" id="filterSearch" data-label-placeholder="search_placeholder" placeholder="اكتب اسم الوردية أو رقم التقرير أو التاريخ..." />
             </div>
             <div class="field" style="display:flex;align-items:flex-end">
               <button class="btn" id="filterBtn"><span data-label="filter_btn">تصفية</span></button>

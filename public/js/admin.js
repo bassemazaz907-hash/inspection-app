@@ -11,7 +11,7 @@ async function api(path, options = {}) {
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(path, { ...options, headers });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "حدث خطأ");
+  if (!res.ok) throw new Error(data.error || L.generic_error);
   return data;
 }
 
@@ -252,7 +252,7 @@ function setupLogoPicker(slot, inputId, chooseBtnId, removeBtnId) {
 async function loadOverview() {
   try {
     const d = await api("/api/admin/overview");
-    document.getElementById("adminWelcome").textContent = new Date().toLocaleDateString("ar-EG", {
+    document.getElementById("adminWelcome").textContent = new Date().toLocaleDateString(getLocaleStr(), {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -378,7 +378,7 @@ async function saveSettings(payload) {
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("saveTitleBtn").addEventListener("click", async () => {
     const value = document.getElementById("projectTitleInput").value.trim();
-    if (!value) return toast(L.project_title_label + " " + "مطلوب", "error");
+    if (!value) return toast(L.project_title_label + " " + L.required, "error");
     try {
       const data = await saveSettings({ title: value });
       document.getElementById("projectTitleInput").value = data.title;
@@ -514,7 +514,7 @@ function renderIconPicker(selected, onPick) {
 async function addSection() {
   const input = document.getElementById("sectionNameInput");
   const name = input.value.trim();
-  if (!name) return toast(L.section_label + " " + "مطلوب", "error");
+  if (!name) return toast(L.section_label + " " + L.required, "error");
   try {
     await api("/api/admin/sections", { method: "POST", body: JSON.stringify({ name }) });
     input.value = "";
@@ -632,7 +632,7 @@ async function loadShifts() {
 async function addShift() {
   const input = document.getElementById("shiftNameInput");
   const name = input.value.trim();
-  if (!name) return toast(L.shift_label + " " + "مطلوب", "error");
+  if (!name) return toast(L.shift_label + " " + L.required, "error");
   try {
     await api("/api/admin/shifts", { method: "POST", body: JSON.stringify({ name }) });
     input.value = "";
@@ -694,7 +694,7 @@ async function loadPenaltyTypes() {
 async function addPenaltyType() {
   const nameInput = document.getElementById("penaltyNameInput");
   const name = nameInput.value.trim();
-  if (!name) return toast(L.penalty_label + " " + "مطلوب", "error");
+  if (!name) return toast(L.penalty_label + " " + L.required, "error");
   try {
     await api("/api/admin/penalty-types", {
       method: "POST",
@@ -774,8 +774,8 @@ async function changePassword() {
   const current = document.getElementById("currentPwInput").value;
   const next = document.getElementById("newPwInput").value;
   const confirm = document.getElementById("confirmPwInput").value;
-  if (!next) return toast(L.new_password + " " + "مطلوب", "error");
-  if (next !== confirm) return toast(L.confirm_password + " " + "غير متطابقة", "error");
+  if (!next) return toast(L.new_password + " " + L.required, "error");
+  if (next !== confirm) return toast(L.confirm_password + " " + L.passwords_mismatch, "error");
   try {
     await api("/api/admin/change-password", {
       method: "POST",
@@ -859,5 +859,17 @@ function closeReportModal() {
 document.getElementById("reportModal").addEventListener("click", (e) => {
   if (e.target === document.getElementById("reportModal")) closeReportModal();
 });
+
+// ===== إعادة العرض عند تغيير اللغة =====
+function refreshDynamicContent() {
+  const active = document.querySelector(".view.active");
+  const tab = active ? active.id.replace("view-", "") : "overview";
+  if (tab === "overview") loadOverview();
+  if (tab === "sections") loadSections();
+  if (tab === "shifts") loadShifts();
+  if (tab === "penalty-types") loadPenaltyTypes();
+  renderLabelsEditor();
+  renderLogoManager();
+}
 
 init();

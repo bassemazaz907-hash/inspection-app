@@ -12,7 +12,7 @@ async function api(path, options = {}) {
     ...options,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "حدث خطأ");
+  if (!res.ok) throw new Error(data.error || L.generic_error);
   return data;
 }
 
@@ -83,7 +83,7 @@ function handleEvent(ev) {
     if (ev.title) applyLabels(ev.labels);
     if (ev.theme) applyTheme(ev.theme);
     if (ev.logos) applyLogos(ev.logos);
-    toast(L.title + " — " + "تم تحديث الإعدادات", "success", "🎨");
+    toast(L.title + " — " + L.settings_updated, "success", "🎨");
   }
 }
 
@@ -124,7 +124,7 @@ async function init() {
     applyLogos(null);
   }
 
-  document.getElementById("todayHint").textContent = new Date().toLocaleDateString("ar-EG", {
+  document.getElementById("todayHint").textContent = new Date().toLocaleDateString(getLocaleStr(), {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -313,7 +313,7 @@ function addPenaltyRow(penaltyId) {
 // ===== حفظ التقرير =====
 document.getElementById("saveReportBtn").addEventListener("click", async () => {
   const reportDate = document.getElementById("reportDate").value;
-  if (!reportDate) return toast(L.date_label + " " + L.report_label + " " + "مطلوب", "error");
+  if (!reportDate) return toast(L.date_label + " " + L.report_label + " " + L.required, "error");
 
   const shiftId = currentShiftId;
 
@@ -378,6 +378,23 @@ function setupTabs() {
       document.getElementById(`view-${view}`).classList.add("active");
     });
   });
+}
+
+// ===== إعادة العرض عند تغيير اللغة =====
+function refreshDynamicContent() {
+  document.getElementById("todayHint").textContent = new Date().toLocaleDateString(getLocaleStr(), {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  renderChecklist();
+  renderPenaltyRows();
+  document.querySelectorAll("#shiftChips .chip").forEach((c) => c.classList.remove("active"));
+  document.querySelectorAll("#penaltyChips .chip").forEach((c) => c.classList.remove("active"));
+  document.getElementById("penaltyRows").innerHTML = "";
+  currentPenaltyIds.clear();
+  loadShifts();
 }
 
 init();

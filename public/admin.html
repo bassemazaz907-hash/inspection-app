@@ -19,6 +19,12 @@
       document.documentElement.dataset.theme = m;
     } catch (e) {}
   </script>
+  <script>
+    try {
+      document.documentElement.lang = localStorage.getItem("lang_mode") === "en" ? "en" : "ar";
+      document.documentElement.dir = localStorage.getItem("lang_mode") === "en" ? "ltr" : "rtl";
+    } catch (e) {}
+  </script>
   <link rel="stylesheet" href="css/style.css" />
   <script src="js/theme.js"></script>
 </head>
@@ -29,6 +35,7 @@
       <div class="brand login-brand">
         <div class="brand-icon">⚙️</div>
         <div class="brand-title" data-label="login_title">لوحة التحكم</div>
+        <button type="button" class="icon-btn login-lang-toggle" id="langToggleLogin" title="English">EN</button>
       </div>
       <div class="field">
         <label data-label="login_password">كلمة المرور</label>
@@ -50,6 +57,7 @@
         </a>
         <div class="app-bar-actions">
           <span class="icon-btn ghost-light" title="البث المباشر"><span class="live-dot"></span></span>
+          <button class="icon-btn" id="langToggle" title="English">EN</button>
           <button class="icon-btn" id="themeToggle" title="الوضع الليلي">🌙</button>
           <button class="icon-btn" id="installBtn" title="تثبيت التطبيق" style="display:none">⬇️</button>
         </div>

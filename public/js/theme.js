@@ -163,6 +163,135 @@ const DEFAULT_LABELS = {
   logo_remove_confirm: "إزالة هذا اللوجو؟",
   logo_hint: "اضغط على اللوجو أعلى الصفحة للعودة إلى الشاشة الرئيسية من أي مكان. لوجو الخلفية يظهر خلف محتوى الشاشة الرئيسية.",
   logo_choose_hint: "PNG أو JPG أو WebP — حتى 2 ميجا",
+  required: "مطلوب",
+  passwords_mismatch: "غير متطابقة",
+  settings_updated: "تم تحديث الإعدادات",
+  generic_error: "حدث خطأ",
+  search_label: "بحث بالاسم",
+  search_placeholder: "اكتب اسم الوردية أو رقم التقرير أو التاريخ...",
+};
+
+const DEFAULT_LABELS_EN = {
+  title: "ELDGAGA APP",
+  date_label: "Date",
+  section_label: "Section",
+  shift_label: "Shift",
+  item_label: "Inspection Item",
+  report_label: "Report",
+  penalty_label: "Penalty",
+  pass_label: "Pass",
+  fail_label: "Fail",
+  note_placeholder: "Note...",
+  general_notes: "General Notes",
+  notes_placeholder: "Notes on the report...",
+  save_report: "Save Report",
+  add: "Add",
+  save: "Save",
+  cancel: "Cancel",
+  edit: "Edit",
+  delete: "Delete",
+  view: "View",
+  total: "Total",
+  amount: "Amount",
+  name: "Name",
+  nav_new: "New Report",
+  nav_reports: "Reports",
+  nav_admin: "Admin Panel",
+  new_report: "New Inspection Report",
+  penalties_label: "Penalties",
+  add_penalty: "+ Add Penalty",
+  no_sections: "No sections yet — add them from the admin panel",
+  no_items_in_section: "No items in this section",
+  no_shifts: "No shifts",
+  no_penalty_types: "No penalty types — add them from the admin panel",
+  reports_title: "Reports",
+  from_date: "From Date",
+  to_date: "To Date",
+  all_shifts: "All Shifts",
+  filter_btn: "Filter",
+  col_number: "#",
+  col_date: "Date",
+  col_shift: "Shift",
+  col_items: "Items",
+  col_pass: "Pass",
+  col_fail: "Fail",
+  col_penalty_total: "Penalties",
+  no_reports: "No matching reports",
+  report_details: "Report Details",
+  notification_new: "New report #{id} added",
+  login_title: "Admin Panel",
+  login_password: "Password",
+  login_btn: "Login",
+  login_hint: "",
+  logout_btn: "Logout",
+  preview_site: "View Site",
+  overview: "Overview",
+  theme_tab: "Appearance & Colors",
+  sections_tab: "Sections & Items",
+  shifts_tab: "Shifts",
+  penalty_types_tab: "Penalty Types",
+  labels_tab: "Labels",
+  settings_tab: "Settings",
+  add_section: "+ New Section",
+  add_item: "+ Item",
+  add_shift: "+ New Shift",
+  add_penalty_type: "+ New Type",
+  theme_title: "Site Colors",
+  theme_desc: "Change any color and it will apply immediately. Press save to keep changes.",
+  save_colors: "Save Colors",
+  reset_colors: "Reset to Default",
+  labels_title: "App Labels",
+  labels_desc: "Change any text in the app — buttons, sections, statuses and more.",
+  save_labels: "Save Labels",
+  project_title_label: "Project Title",
+  project_title_placeholder: "Title shown at the top of the site",
+  save_title: "Save Title",
+  change_password: "Change Password",
+  current_password: "Current Password",
+  new_password: "New Password",
+  confirm_password: "Confirm Password",
+  change_password_btn: "Change Password",
+  stat_total_reports: "Total Reports",
+  stat_today_reports: "Today's Reports",
+  stat_failed_items: "Failed Items",
+  stat_penalty_total: "Penalties",
+  stat_sections: "Sections",
+  stat_shifts: "Shifts",
+  stat_penalty_types: "Penalty Types",
+  latest_reports: "Latest Reports",
+  live_status: "Live connection",
+  section_name_placeholder: "Example: Production Equipment",
+  item_name_placeholder: "Example: Cover Safety",
+  shift_name_placeholder: "Example: Morning Shift",
+  penalty_type_name_placeholder: "Example: Late Violation",
+  delete_report_confirm: "Delete report #{id} permanently?",
+  delete_section_confirm: 'Delete section "{name}" and all its items?',
+  delete_item_confirm: 'Delete item "{name}"?',
+  delete_shift_confirm: 'Delete shift "{name}"?',
+  delete_penalty_confirm: 'Delete penalty "{name}"?',
+  reset_colors_confirm: "Reset colors to default?",
+  welcome_admin: "Admin Panel —",
+  items_label: "Items",
+  back_home: "Home",
+  logos_title: "Logos",
+  logo_brand_label: "Top bar logo (button)",
+  logo_bg_label: "Background logo",
+  logo_icon_label: "App icon (phone screen)",
+  logo_icon_hint: "Used as the app icon after installation — prefer a square PNG 512×512. Delete and reinstall the app after changing the icon so it updates on some phones.",
+  logo_choose: "Choose Image",
+  logo_upload: "Upload",
+  logo_remove: "Remove",
+  logo_uploaded: "Logo uploaded ✓",
+  logo_removed: "Logo removed",
+  logo_remove_confirm: "Remove this logo?",
+  logo_hint: "Tap the top logo to return home from anywhere. The background logo appears behind the home screen content.",
+  logo_choose_hint: "PNG or JPG or WebP — up to 2 MB",
+  required: "required",
+  passwords_mismatch: "do not match",
+  settings_updated: "Settings updated",
+  generic_error: "An error occurred",
+  search_label: "Search by name",
+  search_placeholder: "Type shift name, report number or date...",
 };
 
 const LABEL_FIELDS = [
@@ -263,6 +392,48 @@ const LABEL_FIELDS = [
 ];
 
 let L = { ...DEFAULT_LABELS };
+
+// ===== اللغة =====
+let langMode = "ar";
+try {
+  langMode = localStorage.getItem("lang_mode") === "en" ? "en" : "ar";
+} catch (e) {}
+
+let lastServerLabels = null;
+
+function getLangMode() {
+  return langMode;
+}
+
+function setLangMode(mode) {
+  langMode = mode === "en" ? "en" : "ar";
+  try {
+    localStorage.setItem("lang_mode", langMode);
+  } catch (e) {}
+  applyLabels(lastServerLabels);
+  document.documentElement.lang = langMode === "en" ? "en" : "ar";
+  document.documentElement.dir = langMode === "en" ? "ltr" : "rtl";
+  updateLangBtn();
+  if (typeof refreshDynamicContent === "function") {
+    try { refreshDynamicContent(); } catch (e) {}
+  }
+}
+
+function toggleLang() {
+  setLangMode(langMode === "en" ? "ar" : "en");
+}
+
+function updateLangBtn() {
+  const btns = document.querySelectorAll("#langToggle, #langToggleLogin");
+  btns.forEach((btn) => {
+    btn.textContent = langMode === "en" ? "ع" : "EN";
+    btn.title = langMode === "en" ? "العربية" : "English";
+  });
+}
+
+function getLocaleStr() {
+  return langMode === "en" ? "en-GB" : "ar-EG";
+}
 
 // ===== اللوجوهات =====
 const DEFAULT_LOGOS = { brand: "", bg: "", icon: "" };
@@ -396,10 +567,18 @@ document.addEventListener("DOMContentLoaded", () => {
   updateThemeBtn();
   const btn = document.getElementById("themeToggle");
   if (btn) btn.addEventListener("click", toggleTheme);
+  document.documentElement.lang = langMode === "en" ? "en" : "ar";
+  document.documentElement.dir = langMode === "en" ? "ltr" : "rtl";
+  updateLangBtn();
+  document.querySelectorAll("#langToggle, #langToggleLogin").forEach((btn) => {
+    btn.addEventListener("click", toggleLang);
+  });
 });
 
 function applyLabels(labels) {
-  L = { ...DEFAULT_LABELS, ...(labels || {}) };
+  lastServerLabels = labels;
+  const base = langMode === "en" ? DEFAULT_LABELS_EN : DEFAULT_LABELS;
+  L = { ...base, ...(langMode === "ar" ? (labels || {}) : {}) };
   document.querySelectorAll("[data-label]").forEach((el) => {
     const key = el.getAttribute("data-label");
     if (key && L[key]) el.textContent = L[key];

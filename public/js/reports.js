@@ -9,7 +9,7 @@ async function api(path, options = {}) {
     ...options,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "حدث خطأ");
+  if (!res.ok) throw new Error(data.error || L.generic_error);
   return data;
 }
 
@@ -246,5 +246,11 @@ document.addEventListener("click", (e) => {
     closeReportModal();
   }
 });
+
+// ===== إعادة العرض عند تغيير اللغة =====
+function refreshDynamicContent() {
+  loadShifts();
+  loadReports();
+}
 
 init();
