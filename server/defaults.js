@@ -23,18 +23,18 @@ export function mergeLogos(savedLogos) {
 }
 
 export const DEFAULT_THEME = {
-  "--color-primary": "#1d4ed8",
-  "--color-secondary": "#0ea5e9",
-  "--color-header-bg": "#0f172a",
+  "--color-primary": "#00b8d4",
+  "--color-secondary": "#00c853",
+  "--color-header-bg": "#0a1628",
   "--color-header-text": "#ffffff",
   "--color-bg": "#f1f5f9",
   "--color-card": "#ffffff",
-  "--color-card-border": "#e2e8f0",
+  "--color-card-border": "#d4e0eb",
   "--color-text": "#0f172a",
   "--color-text-muted": "#64748b",
-  "--color-success": "#16a34a",
-  "--color-danger": "#dc2626",
-  "--color-warning": "#d97706",
+  "--color-success": "#00c853",
+  "--color-danger": "#ff2a5f",
+  "--color-warning": "#ffb703",
   "--radius": "12px",
   "--font-size-base": "15px",
 };

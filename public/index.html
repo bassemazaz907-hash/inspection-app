@@ -69,6 +69,9 @@
         <a class="nav-item" href="/admin">
           <span class="nav-icon">⚙️</span><span data-label="nav_admin">لوحة التحكم</span>
         </a>
+        <button class="nav-item nav-item-analytics" data-view="analytics">
+          <span class="nav-icon">📈</span><span data-label="nav_analytics">تحليلات الأداء</span>
+        </button>
       </nav>
       <div class="sidebar-footer">
         <div class="live-status">
@@ -119,6 +122,88 @@
           <button class="btn btn-success btn-block" id="saveReportBtn"><span data-label="save_report">حفظ التقرير</span></button>
         </div>
       </section>
+
+      <!-- ===== تحليلات الأداء الشهرية ===== -->
+      <section id="view-analytics" class="view">
+        <div class="page-header">
+          <div>
+            <h1 data-label="analytics_title">تحليلات الأداء الشهرية</h1>
+            <div class="subtitle" data-label="analytics_subtitle">نظرة شاملة على أداء الفحص</div>
+          </div>
+          <div class="month-selector" id="monthSelector">
+            <button class="icon-btn month-nav" id="monthPrev" title="الشهر السابق">→</button>
+            <span class="month-label" id="monthLabel"></span>
+            <button class="icon-btn month-nav" id="monthNext" title="الشهر التالي">←</button>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid">
+          <div class="gauge-card glass-card">
+            <div class="gauge-container">
+              <svg class="gauge-svg" viewBox="0 0 120 120">
+                <circle class="gauge-bg" cx="60" cy="60" r="52" />
+                <circle class="gauge-fill gauge-fill-pass" id="gaugePassRate" cx="60" cy="60" r="52" />
+              </svg>
+              <div class="gauge-value" id="gaugePassValue">0%</div>
+            </div>
+            <div class="gauge-label" data-label="analytics_pass_rate">نسبة النجاح</div>
+          </div>
+          <div class="kpi-card glass-card">
+            <div class="kpi-icon kpi-icon-reports">📊</div>
+            <div class="kpi-value" id="kpiTotalReports">0</div>
+            <div class="kpi-label" data-label="analytics_total_reports">إجمالي التقارير</div>
+          </div>
+          <div class="kpi-card glass-card">
+            <div class="kpi-icon kpi-icon-items">📋</div>
+            <div class="kpi-value" id="kpiTotalItems">0</div>
+            <div class="kpi-label" data-label="analytics_total_items">إجمالي البنود</div>
+          </div>
+          <div class="kpi-card glass-card">
+            <div class="kpi-icon kpi-icon-fail">⚠️</div>
+            <div class="kpi-value" id="kpiTotalFailed">0</div>
+            <div class="kpi-label" data-label="analytics_total_failed">بنود فاشلة</div>
+          </div>
+        </div>
+
+        <div class="leaderboard-grid">
+          <div class="leaderboard glass-card">
+            <div class="card-title"><span><span class="title-icon">🏆</span><span data-label="analytics_top_performers">الأفضل أداءً</span></span></div>
+            <div id="topPerformers" class="leaderboard-list"></div>
+          </div>
+          <div class="leaderboard glass-card">
+            <div class="card-title"><span><span class="title-icon">⚠️</span><span data-label="analytics_worst_performers">يحتاج تحسين</span></span></div>
+            <div id="worstPerformers" class="leaderboard-list"></div>
+          </div>
+        </div>
+
+        <div class="card glass-card">
+          <div class="card-title"><span><span class="title-icon">📈</span><span data-label="analytics_section_detail">تفصيل الأقسام</span></span></div>
+          <div class="table-wrap">
+            <table id="sectionTable">
+              <thead>
+                <tr>
+                  <th data-label="analytics_rank">#</th>
+                  <th data-label="analytics_section">القسم</th>
+                  <th data-label="analytics_items_count">البنود</th>
+                  <th data-label="analytics_pass">نجاح</th>
+                  <th data-label="analytics_fail">فشل</th>
+                  <th data-label="analytics_pass_rate">نسبة النجاح</th>
+                </tr>
+              </thead>
+              <tbody id="sectionTableBody"></tbody>
+            </table>
+          </div>
+          <div class="export-actions" style="margin-top:14px">
+            <button class="btn btn-sm btn-ghost" id="exportCSV" data-label="analytics_export_csv">تصدير CSV</button>
+            <button class="btn btn-sm btn-ghost" id="exportPDF" data-label="analytics_export_pdf">تصدير PDF</button>
+          </div>
+        </div>
+
+        <div class="empty" id="analyticsEmpty" style="display:none">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text" data-label="analytics_no_data">لا توجد بيانات لهذا الشهر</div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -133,6 +218,9 @@
     <a class="bottom-nav-item" href="/admin">
       <span class="bn-icon">⚙️</span><span data-label="nav_admin">لوحة التحكم</span>
     </a>
+    <button class="bottom-nav-item" data-view="analytics">
+      <span class="bn-icon">📈</span><span data-label="nav_analytics">تحليلات</span>
+    </button>
   </nav>
 
   <div class="toast-wrap" id="toastWrap"></div>

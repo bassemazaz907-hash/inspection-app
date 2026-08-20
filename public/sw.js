@@ -1,4 +1,4 @@
-const CACHE = "inspection-v3";
+const CACHE = "inspection-v4";
 const CORE = ["/", "/index.html", "/admin.html", "/css/style.css", "/js/theme.js", "/js/app.js", "/js/admin.js", "/js/pwa.js", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {

@@ -136,6 +136,7 @@ async function init() {
   renderPenaltyRows();
   setupTabs();
   connectEvents();
+  setupAnalytics();
   hideSplash();
 }
 
@@ -380,6 +381,170 @@ function setupTabs() {
   });
 }
 
+// ===== تحليلات الأداء الشهرية =====
+let analyticsDate = new Date();
+
+function getAnalyticsYear() { return analyticsDate.getFullYear(); }
+function getAnalyticsMonth() { return analyticsDate.getMonth() + 1; }
+
+function updateMonthLabel() {
+  const months = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+  const monthsEn = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const m = getAnalyticsMonth();
+  const y = getAnalyticsYear();
+  const label = document.getElementById("monthLabel");
+  if (label) label.textContent = (langMode === "en" ? monthsEn[m-1] : months[m-1]) + " " + y;
+}
+
+function prevMonth() {
+  analyticsDate.setMonth(analyticsDate.getMonth() - 1);
+  loadAnalytics();
+}
+
+function nextMonth() {
+  analyticsDate.setMonth(analyticsDate.getMonth() + 1);
+  loadAnalytics();
+}
+
+async function loadAnalytics() {
+  updateMonthLabel();
+  const year = getAnalyticsYear();
+  const month = getAnalyticsMonth();
+  try {
+    const data = await api(`/api/monthly-analytics?year=${year}&month=${month}`);
+    renderAnalytics(data);
+  } catch (e) {
+    renderAnalytics(null);
+  }
+}
+
+function renderAnalytics(data) {
+  const empty = document.getElementById("analyticsEmpty");
+  const kpiGrid = document.getElementById("kpiGrid");
+  const lbGrid = document.querySelector(".leaderboard-grid");
+  const tableWrap = document.querySelector("#sectionTable").closest(".card");
+
+  if (!data || data.overallStats.totalReports === 0) {
+    if (empty) empty.style.display = "";
+    if (kpiGrid) kpiGrid.style.display = "none";
+    if (lbGrid) lbGrid.style.display = "none";
+    if (tableWrap) tableWrap.style.display = "none";
+    return;
+  }
+
+  if (empty) empty.style.display = "none";
+  if (kpiGrid) kpiGrid.style.display = "";
+  if (lbGrid) lbGrid.style.display = "";
+  if (tableWrap) tableWrap.style.display = "";
+
+  const s = data.overallStats;
+  document.getElementById("kpiTotalReports").textContent = s.totalReports;
+  document.getElementById("kpiTotalItems").textContent = s.totalItems;
+  document.getElementById("kpiTotalFailed").textContent = s.totalFailed;
+
+  const circumference = 2 * Math.PI * 52;
+  const gauge = document.getElementById("gaugePassRate");
+  const gaugeVal = document.getElementById("gaugePassValue");
+  if (gauge) {
+    const offset = circumference - (s.passRate / 100) * circumference;
+    gauge.style.strokeDashoffset = offset;
+  }
+  if (gaugeVal) gaugeVal.textContent = s.passRate + "%";
+
+  renderLeaderboard("topPerformers", data.bestPerformers, true);
+  renderLeaderboard("worstPerformers", data.worstPerformers, false);
+  renderSectionTable(data.sectionPerformance);
+}
+
+function renderLeaderboard(containerId, items, isTop) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+  if (!items || items.length === 0) {
+    container.innerHTML = `<div class="leaderboard-empty">${langMode === "en" ? "No data available" : "لا توجد بيانات"}</div>`;
+    return;
+  }
+  items.forEach((item, i) => {
+    const rankClass = isTop
+      ? (i === 0 ? "rank-gold" : i === 1 ? "rank-silver" : "rank-bronze")
+      : "rank-danger";
+    const rateClass = item.passRate >= 80 ? "rate-high" : item.passRate >= 50 ? "rate-mid" : "rate-low";
+    const div = document.createElement("div");
+    div.className = "leaderboard-item";
+    div.innerHTML = `
+      <div class="leaderboard-rank ${rankClass}">${i + 1}</div>
+      <div class="leaderboard-info">
+        <div class="leaderboard-name">${item.sectionName || "—"}</div>
+        <div class="leaderboard-meta">${item.passed}✓ ${item.failed}✗ / ${item.totalItems}</div>
+      </div>
+      <div class="leaderboard-rate ${rateClass}">${item.passRate}%</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderSectionTable(sections) {
+  const tbody = document.getElementById("sectionTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  if (!sections || sections.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--color-text-muted)">${langMode === "en" ? "No data" : "لا توجد بيانات"}</td></tr>`;
+    return;
+  }
+  sections.forEach((s, i) => {
+    const rateClass = s.passRate >= 80 ? "rate-high" : s.passRate >= 50 ? "rate-mid" : "rate-low";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${s.sectionName || "—"}</td>
+      <td>${s.totalItems}</td>
+      <td>${s.passed}</td>
+      <td>${s.failed}</td>
+      <td>
+        <span class="${rateClass}" style="font-weight:700">${s.passRate}%</span>
+        <div class="progress-bar"><div class="progress-fill" style="width:${s.passRate}%"></div></div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function exportCSV() {
+  const rows = [["#", langMode === "en" ? "Section" : "القسم", langMode === "en" ? "Items" : "البنود", langMode === "en" ? "Pass" : "نجاح", langMode === "en" ? "Fail" : "فشل", langMode === "en" ? "Pass Rate" : "نسبة النجاح"]];
+  document.querySelectorAll("#sectionTableBody tr").forEach((tr) => {
+    const cells = tr.querySelectorAll("td");
+    if (cells.length >= 6) rows.push(Array.from(cells).map((c) => c.textContent.trim()));
+  });
+  const csv = rows.map((r) => r.join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `analytics_${getAnalyticsYear()}_${getAnalyticsMonth()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportPDF() {
+  window.print();
+}
+
+function setupAnalytics() {
+  const prev = document.getElementById("monthPrev");
+  const next = document.getElementById("monthNext");
+  if (prev) prev.addEventListener("click", prevMonth);
+  if (next) next.addEventListener("click", nextMonth);
+  const csvBtn = document.getElementById("exportCSV");
+  const pdfBtn = document.getElementById("exportPDF");
+  if (csvBtn) csvBtn.addEventListener("click", exportCSV);
+  if (pdfBtn) pdfBtn.addEventListener("click", exportPDF);
+
+  document.querySelectorAll("[data-view='analytics']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      loadAnalytics();
+    });
+  });
+}
+
 // ===== إعادة العرض عند تغيير اللغة =====
 function refreshDynamicContent() {
   document.getElementById("todayHint").textContent = new Date().toLocaleDateString(getLocaleStr(), {
@@ -395,6 +560,9 @@ function refreshDynamicContent() {
   document.getElementById("penaltyRows").innerHTML = "";
   currentPenaltyIds.clear();
   loadShifts();
+  if (document.getElementById("view-analytics") && document.getElementById("view-analytics").classList.contains("active")) {
+    loadAnalytics();
+  }
 }
 
 init();

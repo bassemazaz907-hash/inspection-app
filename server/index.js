@@ -357,6 +357,130 @@ app.get("/api/reports/:id", handle(async (req, res) => {
   });
 }));
 
+// ==================== تحليلات الأداء الشهرية ====================
+app.get("/api/monthly-analytics", handle(async (req, res) => {
+  const db = await getDb();
+  if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
+
+  const year = parseInt(req.query.year);
+  const month = parseInt(req.query.month);
+  if (!year || !month || month < 1 || month > 12) {
+    return res.status(400).json({ error: "السنة والشهر مطلوبان" });
+  }
+
+  const mm = String(month).padStart(2, "0");
+  const startDate = `${year}-${mm}-01`;
+  const nextM = month === 12 ? 1 : month + 1;
+  const nextY = month === 12 ? year + 1 : year;
+  const endDate = `${nextY}-${String(nextM).padStart(2, "0")}-01`;
+
+  let trendMonth = month - 5;
+  let trendYear = year;
+  if (trendMonth < 1) { trendMonth += 12; trendYear--; }
+  const trendStart = `${trendYear}-${String(trendMonth).padStart(2, "0")}-01`;
+
+  const pool = await getPool();
+  async function raw(sql, params = []) {
+    if (isPg) {
+      let pgSql = sql;
+      params.forEach((_, i) => { pgSql = pgSql.replace("?", `$${i + 1}`); });
+      const { rows } = await pool.query(pgSql, params);
+      return rows;
+    }
+    const [rows] = await pool.query(sql, params);
+    return rows;
+  }
+
+  const [overall] = await raw(`
+    SELECT
+      COUNT(DISTINCT r.id) AS total_reports,
+      COUNT(ri.id) AS total_items,
+      SUM(CASE WHEN ri.status = 'pass' THEN 1 ELSE 0 END) AS total_passed,
+      SUM(CASE WHEN ri.status = 'fail' THEN 1 ELSE 0 END) AS total_failed
+    FROM reports r
+    LEFT JOIN report_items ri ON ri.report_id = r.id
+    WHERE r.report_date >= ? AND r.report_date < ?
+  `, [startDate, endDate]);
+
+  const totalReports = Number(overall?.total_reports) || 0;
+  const totalItems = Number(overall?.total_items) || 0;
+  const totalPassed = Number(overall?.total_passed) || 0;
+  const totalFailed = Number(overall?.total_failed) || 0;
+  const passRate = totalItems > 0 ? Math.round((totalPassed / totalItems) * 10000) / 100 : 0;
+
+  const sectionRows = await raw(`
+    SELECT
+      s.id AS section_id,
+      s.name AS section_name,
+      COALESCE(sc.total_items, 0) AS total_items,
+      COALESCE(sc.passed, 0) AS passed,
+      COALESCE(sc.failed, 0) AS failed
+    FROM sections s
+    LEFT JOIN (
+      SELECT
+        ins.section_id,
+        COUNT(ri.id) AS total_items,
+        SUM(CASE WHEN ri.status = 'pass' THEN 1 ELSE 0 END) AS passed,
+        SUM(CASE WHEN ri.status = 'fail' THEN 1 ELSE 0 END) AS failed
+      FROM inspection_items ins
+      INNER JOIN report_items ri ON ri.inspection_item_id = ins.id
+      INNER JOIN reports r ON r.id = ri.report_id AND r.report_date >= ? AND r.report_date < ?
+      GROUP BY ins.section_id
+    ) sc ON sc.section_id = s.id
+  `, [startDate, endDate]);
+
+  const sectionPerformance = sectionRows.map((r) => {
+    const items = Number(r.total_items) || 0;
+    const passed = Number(r.passed) || 0;
+    const failed = Number(r.failed) || 0;
+    return {
+      sectionId: r.section_id,
+      sectionName: r.section_name,
+      sectionIcon: null,
+      totalItems: items,
+      passed,
+      failed,
+      passRate: items > 0 ? Math.round((passed / items) * 10000) / 100 : 0,
+    };
+  });
+  sectionPerformance.sort((a, b) => b.passRate - a.passRate);
+
+  const withItems = sectionPerformance.filter((s) => s.totalItems > 0);
+  const bestPerformers = withItems.slice(0, 3);
+  const worstPerformers = [...withItems].reverse().slice(0, 3);
+
+  const trendRows = await raw(`
+    SELECT
+      SUBSTR(r.report_date, 1, 7) AS month,
+      COUNT(DISTINCT r.id) AS total_reports,
+      COUNT(ri.id) AS total_items,
+      SUM(CASE WHEN ri.status = 'pass' THEN 1 ELSE 0 END) AS total_passed
+    FROM reports r
+    LEFT JOIN report_items ri ON ri.report_id = r.id
+    WHERE r.report_date >= ? AND r.report_date < ?
+    GROUP BY month
+    ORDER BY month
+  `, [trendStart, endDate]);
+
+  const monthlyTrend = trendRows.map((r) => {
+    const items = Number(r.total_items) || 0;
+    const passed = Number(r.total_passed) || 0;
+    return {
+      month: r.month,
+      totalReports: Number(r.total_reports) || 0,
+      passRate: items > 0 ? Math.round((passed / items) * 10000) / 100 : 0,
+    };
+  });
+
+  res.json({
+    overallStats: { totalReports, totalItems, totalPassed, totalFailed, passRate },
+    sectionPerformance,
+    bestPerformers,
+    worstPerformers,
+    monthlyTrend,
+  });
+}));
+
 // ==================== المصادقة ====================
 app.post("/api/admin/login", handle(async (req, res) => {
   const { password } = req.body || {};
