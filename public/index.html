@@ -9,10 +9,20 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ELDGAGA APP" />
   <meta name="description" content="ELDGAGA APP" />
+  <link rel="preconnect" href="https://inspection-app-1-inlw.onrender.com" crossorigin />
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="/app-icon.png" />
   <link rel="apple-touch-icon" href="/app-icon.png" />
   <title>ELDGAGA APP</title>
+  <style>
+    .splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#040810;transition:opacity .25s ease,visibility .25s ease}
+    .splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
+    .splash-logo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#fff}
+    .splash-logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .splash-name{position:relative;font-size:1.6em;font-weight:800;color:#fff;letter-spacing:1px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+    .splash-spinner{position:relative;width:28px;height:28px;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:_.8s linear infinite}
+    @keyframes _{to{transform:rotate(360deg)}}
+  </style>
   <script>
     try {
       var m = localStorage.getItem("theme_mode");
@@ -27,7 +37,8 @@
     } catch (e) {}
   </script>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js" defer></script>
+  <script src="js/app.js" defer></script>
 </head>
 <body class="page-index">
   <div class="splash" id="splash">

@@ -30,7 +30,8 @@ function toast(message, type = "success", icon) {
   txt.textContent = message;
   el.appendChild(txt);
   wrap.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+  requestAnimationFrame(() => { el.style.opacity = "1"; el.style.transform = "translateX(0)"; });
+  setTimeout(() => { el.style.opacity = "0"; el.style.transform = "translateX(-20px)"; setTimeout(() => el.remove(), 300); }, 3000);
 }
 
 function el(tag, attrs = {}, children = []) {
@@ -106,23 +107,23 @@ function applyCachedSettings(settings) {
 }
 
 async function init() {
-  if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission().catch(() => {});
-  }
-
+  // Apply cached settings INSTANTLY (no await)
   let cached = null;
   try { cached = JSON.parse(localStorage.getItem("settings_cache") || "null"); } catch (e) {}
   applyCachedSettings(cached);
 
-  try {
-    const settings = await api("/api/settings/public");
+  // Hide splash INSTANTLY — content is visible from cache
+  hideSplash();
+
+  // Fire all data loads in parallel — don't block UI
+  const settingsP = api("/api/settings/public").then((settings) => {
     try { localStorage.setItem("settings_cache", JSON.stringify(settings)); } catch (e) {}
     applyCachedSettings(settings);
-  } catch (e) {
-    applyTheme(null);
-    applyLabels(null);
-    applyLogos(null);
-  }
+  }).catch(() => {});
+
+  const sectionsP = api("/api/sections").then((data) => { sectionsData = data; renderChecklist(); }).catch(() => {});
+  const shiftsP = api("/api/shifts").then((data) => { shiftsData = data; loadShiftsRender(); }).catch(() => {});
+  const penaltyP = api("/api/penalty-types").then((data) => { penaltyTypesData = data; renderPenaltyRows(); }).catch(() => {});
 
   document.getElementById("todayHint").textContent = new Date().toLocaleDateString(getLocaleStr(), {
     weekday: "long",
@@ -130,42 +131,47 @@ async function init() {
     month: "long",
     day: "numeric",
   });
-
-  await Promise.all([loadSections(), loadShifts(), loadPenaltyTypes()]);
   document.getElementById("reportDate").value = todayStr();
-  renderPenaltyRows();
+
   setupTabs();
   connectEvents();
   setupAnalytics();
-  hideSplash();
+
+  // Notification permission (lazy, non-blocking)
+  if ("Notification" in window && Notification.permission === "default") {
+    requestAnimationFrame(() => Notification.requestPermission().catch(() => {}));
+  }
+
+  await Promise.allSettled([settingsP, sectionsP, shiftsP, penaltyP]);
 }
 
 function hideSplash() {
   const splash = document.getElementById("splash");
   if (splash) {
     splash.classList.add("hidden");
-    setTimeout(() => splash.remove(), 600);
+    requestAnimationFrame(() => setTimeout(() => splash.remove(), 300));
   }
 }
 
-async function loadSections() {
-  sectionsData = await api("/api/sections");
-  renderChecklist();
-}
-
-async function loadShifts() {
-  shiftsData = await api("/api/shifts");
+function loadShiftsRender() {
   const container = document.getElementById("shiftChips");
   container.innerHTML = "";
   if (!shiftsData.length) {
     container.appendChild(el("div", { class: "chip-group" }, [el("span", { class: "chip disabled" }, [L.no_shifts])]));
     return;
   }
+  const frag = document.createDocumentFragment();
   for (const s of shiftsData) {
     const chip = el("button", { type: "button", class: "chip", onclick: () => selectShift(s.id, chip) }, [s.name]);
     chip.dataset.id = s.id;
-    container.appendChild(chip);
+    frag.appendChild(chip);
   }
+  container.appendChild(frag);
+}
+
+async function loadShifts() {
+  shiftsData = await api("/api/shifts");
+  loadShiftsRender();
 }
 
 function selectShift(id, chip) {
@@ -199,13 +205,13 @@ async function loadPenaltyTypes() {
     container.appendChild(el("div", { class: "chip-group" }, [el("span", { class: "chip disabled" }, [L.no_penalty_types])]));
     return;
   }
+  const frag = document.createDocumentFragment();
   for (const t of penaltyTypesData) {
-    const chip = el("button", { type: "button", class: "chip", onclick: () => selectPenalty(t.id, chip) }, [
-      t.name,
-    ]);
+    const chip = el("button", { type: "button", class: "chip", onclick: () => selectPenalty(t.id, chip) }, [t.name]);
     chip.dataset.id = t.id;
-    container.appendChild(chip);
+    frag.appendChild(chip);
   }
+  container.appendChild(frag);
 }
 
 // ===== عرض قائمة الفحص =====
@@ -222,6 +228,7 @@ function renderChecklist() {
     return;
   }
 
+  const frag = document.createDocumentFragment();
   for (const section of sectionsData) {
     const card = el("div", { class: "card card-hover" });
     const header = el("div", { class: "card-title" });
@@ -240,8 +247,9 @@ function renderChecklist() {
       grid.appendChild(renderItemRow(item));
     }
     card.appendChild(grid);
-    container.appendChild(card);
+    frag.appendChild(card);
   }
+  container.appendChild(frag);
 }
 
 function renderItemRow(item) {
@@ -286,7 +294,27 @@ function setStatus(row, status) {
 function renderPenaltyRows() {
   const container = document.getElementById("penaltyRows");
   container.innerHTML = "";
-  currentPenaltyIds.forEach((id) => addPenaltyRow(id));
+  if (currentPenaltyIds.size === 0) return;
+  const frag = document.createDocumentFragment();
+  currentPenaltyIds.forEach((id) => {
+    const type = penaltyTypesData.find((t) => t.id === id);
+    if (!type) return;
+    const row = el("div", { class: "penalty-row", "data-penalty-id": type.id });
+    const name = el("span", { class: "penalty-name" }, [type.name]);
+    const noteInput = el("input", { type: "text", placeholder: L.note_placeholder, class: "penalty-note" });
+    const removeBtn = el("button", { class: "remove-btn", type: "button" }, ["✕"]);
+    removeBtn.addEventListener("click", () => {
+      currentPenaltyIds.delete(type.id);
+      const chip = document.querySelector(`#penaltyChips .chip[data-id="${type.id}"]`);
+      if (chip) chip.classList.remove("active");
+      row.remove();
+    });
+    row.appendChild(name);
+    row.appendChild(noteInput);
+    row.appendChild(removeBtn);
+    frag.appendChild(row);
+  });
+  container.appendChild(frag);
 }
 
 function addPenaltyRow(penaltyId) {
@@ -340,17 +368,18 @@ document.getElementById("saveReportBtn").addEventListener("click", async () => {
   const btn = document.getElementById("saveReportBtn");
   btn.disabled = true;
 
+  // Optimistic UI: show success instantly
+  toast(`${L.report_label} ${L.save} ✓`, "success", "✅");
+  resetForm();
+  btn.disabled = false;
+
   try {
     await api("/api/reports", {
       method: "POST",
       body: JSON.stringify({ reportDate, shiftId, notes: notes || null, items, penalties }),
     });
-    toast(`${L.report_label} ${L.save} ✓`, "success", "✅");
-    resetForm();
   } catch (e) {
     toast(e.message, "error", "⚠️");
-  } finally {
-    btn.disabled = false;
   }
 });
 

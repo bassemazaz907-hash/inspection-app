@@ -42,10 +42,18 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*,
+*::before,
+*::after {
+  will-change: auto;
 }
 
 html {
   -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 }
 
 html,
@@ -77,6 +85,23 @@ body {
 ::selection {
   background: var(--color-primary);
   color: #fff;
+}
+
+/* ===== GPU Acceleration ===== */
+.btn, .chip, .nav-item, .bottom-nav-item, .icon-btn, .sidebar-toggle-btn,
+.item-card, .card, .segmented button, .remove-btn, .tab-strip-btn {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.btn, .chip, .nav-item, .bottom-nav-item, .icon-btn, .sidebar-toggle-btn,
+.tab-strip-btn, .segmented button, .remove-btn {
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.1s ease, box-shadow 0.12s ease;
+}
+
+.card, .item-card {
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
 
 /* ===== الهيكل العام ===== */
