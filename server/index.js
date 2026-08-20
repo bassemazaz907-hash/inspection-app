@@ -15,7 +15,7 @@ import {
   shifts,
   notifications,
 } from "../drizzle/schema.js";
-import { getDb, getAppSettings, saveAppSettings, getSetting, setSetting, initSchema, insertReturnId, isPg } from "./db.js";
+import { getDb, getPool, getAppSettings, saveAppSettings, getSetting, setSetting, initSchema, insertReturnId, isPg } from "./db.js";
 import { hashPassword, verifyPassword, createToken, isValidToken, revokeToken } from "./auth.js";
 import {
   DEFAULT_TITLE,
