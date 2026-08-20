@@ -451,7 +451,7 @@ app.get("/api/monthly-analytics", handle(async (req, res) => {
 
   const trendRows = await raw(`
     SELECT
-      SUBSTR(r.report_date, 1, 7) AS month,
+      SUBSTRING(r.report_date, 1, 7) AS month,
       COUNT(DISTINCT r.id) AS total_reports,
       COUNT(ri.id) AS total_items,
       SUM(CASE WHEN ri.status = 'pass' THEN 1 ELSE 0 END) AS total_passed
