@@ -460,7 +460,7 @@ function toggleLang() {
 }
 
 function updateLangBtn() {
-  const btns = document.querySelectorAll("#langToggle, #langToggleLogin");
+  const btns = document.querySelectorAll("#langToggle, #langToggleLogin, #langToggleSide");
   btns.forEach((btn) => {
     btn.textContent = langMode === "en" ? "ع" : "EN";
     btn.title = langMode === "en" ? "العربية" : "English";
@@ -595,18 +595,28 @@ function toggleTheme() {
 }
 
 function updateThemeBtn() {
+  const icons = themeMode === "dark" ? "☀️" : "🌙";
+  const titles = themeMode === "dark"
+    ? (langMode === "en" ? "Light mode" : "الوضع النهاري")
+    : (langMode === "en" ? "Dark mode" : "الوضع الليلي");
   const btn = document.getElementById("themeToggle");
-  if (btn) btn.textContent = themeMode === "dark" ? "☀️" : "🌙";
+  if (btn) { btn.textContent = icons; btn.title = titles; }
+  const btnSide = document.getElementById("themeToggleSide");
+  if (btnSide) { btnSide.textContent = icons; btnSide.title = titles; }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   updateThemeBtn();
   const btn = document.getElementById("themeToggle");
   if (btn) btn.addEventListener("click", toggleTheme);
+  const btnSide = document.getElementById("themeToggleSide");
+  if (btnSide) {
+    btnSide.addEventListener("click", toggleTheme);
+  }
   document.documentElement.lang = langMode === "en" ? "en" : "ar";
   document.documentElement.dir = langMode === "en" ? "ltr" : "rtl";
   updateLangBtn();
-  document.querySelectorAll("#langToggle, #langToggleLogin").forEach((btn) => {
+  document.querySelectorAll("#langToggle, #langToggleLogin, #langToggleSide").forEach((btn) => {
     btn.addEventListener("click", toggleLang);
   });
 });
