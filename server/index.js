@@ -207,6 +207,42 @@ app.get("/api/settings/public", handle(async (req, res) => {
   });
 }));
 
+// ==================== نقطة بدء موحدة — كل البيانات في استدعاء واحد ====================
+app.get("/api/init", handle(async (req, res) => {
+  const db = await getDb();
+  const current = await getAppSettings();
+
+  const [allSections, allShifts, allPenaltyTypes] = await Promise.all([
+    db ? db.select().from(sections).orderBy(asc(sections.order)) : Promise.resolve([]),
+    db ? db.select().from(shifts).orderBy(asc(shifts.order)) : Promise.resolve([]),
+    db ? db.select().from(penaltyTypes).orderBy(asc(penaltyTypes.id)) : Promise.resolve([]),
+  ]);
+
+  let itemsBySection = [];
+  if (db && allSections.length) {
+    const allItems = await db.select().from(inspectionItems).orderBy(asc(inspectionItems.order));
+    const itemMap = new Map();
+    for (const s of allSections) itemMap.set(s.id, []);
+    for (const item of allItems) {
+      const arr = itemMap.get(item.sectionId);
+      if (arr) arr.push(item);
+    }
+    itemsBySection = allSections.map((s) => ({ ...s, items: itemMap.get(s.id) || [] }));
+  }
+
+  res.json({
+    settings: {
+      title: current.title || DEFAULT_TITLE,
+      theme: mergeTheme(current.theme),
+      labels: mergeLabels(current.labels),
+      logos: mergeLogos(current.logos),
+    },
+    sections: itemsBySection,
+    shifts: allShifts,
+    penaltyTypes: allPenaltyTypes.map((r) => ({ ...r, amount: Number(r.amount || 0) })),
+  });
+}));
+
 app.get("/api/sections", handle(async (req, res) => {
   const db = await getDb();
   if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });

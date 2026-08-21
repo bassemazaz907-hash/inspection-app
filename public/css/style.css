@@ -97,11 +97,46 @@ body {
 
 .btn, .chip, .nav-item, .bottom-nav-item, .icon-btn, .sidebar-toggle-btn,
 .tab-strip-btn, .segmented button, .remove-btn {
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.1s ease, box-shadow 0.12s ease;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease, transform 0.08s ease, box-shadow 0.1s ease;
 }
 
 .card, .item-card {
-  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+  transition: box-shadow 0.12s ease, transform 0.12s ease, border-color 0.12s ease;
+}
+
+/* ===== Mobile 60fps ===== */
+@media (max-width: 820px) {
+  .main, .sidebar, .card, .item-card, .chip, .btn, .bottom-nav {
+    will-change: auto;
+  }
+  .card, .item-card {
+    contain: layout style;
+  }
+  .bottom-nav {
+    contain: layout style;
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  .view {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
+  }
+  .checklist-container, #checklistContainer {
+    contain: layout style;
+  }
+  .item-grid {
+    contain: layout style;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior: none;
+}
+
+/* Prevent pull-to-refresh interference */
+body {
+  overscroll-behavior-y: contain;
 }
 
 /* ===== الهيكل العام ===== */

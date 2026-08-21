@@ -107,42 +107,62 @@ function applyCachedSettings(settings) {
 }
 
 async function init() {
-  // Apply cached settings INSTANTLY (no await)
+  // 1. Apply cached settings INSTANTLY from localStorage (0ms)
   let cached = null;
-  try { cached = JSON.parse(localStorage.getItem("settings_cache") || "null"); } catch (e) {}
-  applyCachedSettings(cached);
+  try { cached = JSON.parse(localStorage.getItem("init_cache") || "null"); } catch (e) {}
+  if (cached) {
+    applyCachedSettings(cached.settings);
+    sectionsData = cached.sections || [];
+    shiftsData = cached.shifts || [];
+    penaltyTypesData = cached.penaltyTypes || [];
+  } else {
+    try { cached = JSON.parse(localStorage.getItem("settings_cache") || "null"); } catch (e) {}
+    applyCachedSettings(cached);
+  }
 
-  // Hide splash INSTANTLY — content is visible from cache
+  // 2. Hide splash INSTANTLY — content visible from cache
   hideSplash();
-
-  // Fire all data loads in parallel — don't block UI
-  const settingsP = api("/api/settings/public").then((settings) => {
-    try { localStorage.setItem("settings_cache", JSON.stringify(settings)); } catch (e) {}
-    applyCachedSettings(settings);
-  }).catch(() => {});
-
-  const sectionsP = api("/api/sections").then((data) => { sectionsData = data; renderChecklist(); }).catch(() => {});
-  const shiftsP = api("/api/shifts").then((data) => { shiftsData = data; loadShiftsRender(); }).catch(() => {});
-  const penaltyP = api("/api/penalty-types").then((data) => { penaltyTypesData = data; renderPenaltyRows(); }).catch(() => {});
-
   document.getElementById("todayHint").textContent = new Date().toLocaleDateString(getLocaleStr(), {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
   document.getElementById("reportDate").value = todayStr();
 
+  // 3. Render from cache immediately (no wait)
+  renderChecklist();
+  loadShiftsRender();
+  renderPenaltyRows();
   setupTabs();
   connectEvents();
   setupAnalytics();
 
-  // Notification permission (lazy, non-blocking)
+  // 4. ONE single API call for ALL data
+  try {
+    const data = await api("/api/init");
+    applyCachedSettings(data.settings);
+    sectionsData = data.sections || [];
+    shiftsData = data.shifts || [];
+    penaltyTypesData = data.penaltyTypes || [];
+
+    // Re-render with fresh data (instant since DOM is already built)
+    renderChecklist();
+    loadShiftsRender();
+    renderPenaltyRows();
+
+    // Cache everything for next visit (instant on reload!)
+    try { localStorage.setItem("init_cache", JSON.stringify(data)); } catch (e) {}
+    try { localStorage.setItem("settings_cache", JSON.stringify(data.settings)); } catch (e) {}
+  } catch (e) {
+    if (!cached) {
+      applyTheme(null);
+      applyLabels(null);
+      applyLogos(null);
+    }
+  }
+
+  // 5. Notification permission (non-blocking)
   if ("Notification" in window && Notification.permission === "default") {
     requestAnimationFrame(() => Notification.requestPermission().catch(() => {}));
   }
-
-  await Promise.allSettled([settingsP, sectionsP, shiftsP, penaltyP]);
 }
 
 function hideSplash() {
@@ -366,21 +386,18 @@ document.getElementById("saveReportBtn").addEventListener("click", async () => {
 
   const notes = document.getElementById("reportNotes").value.trim();
   const btn = document.getElementById("saveReportBtn");
-  btn.disabled = true;
 
-  // Optimistic UI: show success instantly
+  // Instant optimistic UI
+  btn.disabled = true;
   toast(`${L.report_label} ${L.save} ✓`, "success", "✅");
   resetForm();
   btn.disabled = false;
 
-  try {
-    await api("/api/reports", {
-      method: "POST",
-      body: JSON.stringify({ reportDate, shiftId, notes: notes || null, items, penalties }),
-    });
-  } catch (e) {
-    toast(e.message, "error", "⚠️");
-  }
+  // Fire server call (non-blocking feel)
+  api("/api/reports", {
+    method: "POST",
+    body: JSON.stringify({ reportDate, shiftId, notes: notes || null, items, penalties }),
+  }).catch((e) => toast(e.message, "error", "⚠️"));
 });
 
 function resetForm() {
@@ -401,11 +418,15 @@ function setupTabs() {
   const selectors = [".nav-item[data-view]", ".bottom-nav-item[data-view]"];
   document.querySelectorAll(selectors.join(",")).forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(selectors.join(",")).forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      const view = btn.dataset.view;
-      document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
-      document.getElementById(`view-${view}`).classList.add("active");
+      // Batch DOM writes in single rAF
+      requestAnimationFrame(() => {
+        document.querySelectorAll(selectors.join(",")).forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const view = btn.dataset.view;
+        document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+        const target = document.getElementById(`view-${view}`);
+        if (target) target.classList.add("active");
+      });
     });
   });
 }
@@ -577,21 +598,19 @@ function setupAnalytics() {
 // ===== إعادة العرض عند تغيير اللغة =====
 function refreshDynamicContent() {
   document.getElementById("todayHint").textContent = new Date().toLocaleDateString(getLocaleStr(), {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
   renderChecklist();
+  loadShiftsRender();
   renderPenaltyRows();
-  document.querySelectorAll("#shiftChips .chip").forEach((c) => c.classList.remove("active"));
-  document.querySelectorAll("#penaltyChips .chip").forEach((c) => c.classList.remove("active"));
   document.getElementById("penaltyRows").innerHTML = "";
   currentPenaltyIds.clear();
-  loadShifts();
   if (document.getElementById("view-analytics") && document.getElementById("view-analytics").classList.contains("active")) {
     loadAnalytics();
   }
 }
+
+// ===== Touch response acceleration =====
+document.addEventListener("touchstart", () => {}, { passive: true });
 
 init();

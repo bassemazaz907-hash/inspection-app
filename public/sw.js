@@ -1,4 +1,4 @@
-const CACHE = "inspection-v5";
+const CACHE = "inspection-v6";
 const CORE = ["/", "/index.html", "/admin.html", "/reports.html", "/css/style.css", "/js/theme.js", "/js/app.js", "/js/admin.js", "/js/reports.js", "/js/pwa.js", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png", "/app-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -15,20 +15,49 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+const API_CACHE = "api-v1";
+const CACHEABLE_API = new Set(["/api/init", "/api/settings/public"]);
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // API requests: network-first with short timeout, no cache
+  // SSE: don't cache
+  if (url.pathname === "/api/events") return;
+
+  // API requests
   if (url.pathname.startsWith("/api/")) {
-    if (url.pathname === "/api/events") return;
+    // Cacheable API: cache-first (instant on revisit!)
+    if (CACHEABLE_API.has(url.pathname)) {
+      event.respondWith(
+        caches.open(API_CACHE).then(async (cache) => {
+          const cached = await cache.match(req);
+          // Serve cached instantly, update in background
+          if (cached) {
+            fetch(req).then((fresh) => {
+              if (fresh && fresh.ok) cache.put(req, fresh);
+            }).catch(() => {});
+            return cached;
+          }
+          try {
+            const fresh = await fetch(req);
+            if (fresh && fresh.ok) cache.put(req, fresh.clone());
+            return fresh;
+          } catch (err) {
+            return new Response(JSON.stringify({ error: "offline" }), { headers: { "Content-Type": "application/json" } });
+          }
+        })
+      );
+      return;
+    }
+    // Other API: network-first with 3s timeout
     event.respondWith(
       Promise.race([
         fetch(req),
-        new Promise((_, reject) => setTimeout(() => reject(), 4000))
-      ]).catch(() => caches.match(req)).then(r => r || new Response(JSON.stringify({error:"offline"}), {headers:{"Content-Type":"application/json"}}))
+        new Promise((_, reject) => setTimeout(() => reject(), 3000))
+      ]).catch(() => caches.match(req)).then(r => r || new Response(JSON.stringify({ error: "offline" }), { headers: { "Content-Type": "application/json" } }))
     );
     return;
   }
