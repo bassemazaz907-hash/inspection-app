@@ -99,6 +99,7 @@ async function refreshData() {
     penaltyTypesData = data.penaltyTypes || [];
     renderChecklist();
     loadShiftsRender();
+    loadPenaltyChipsRender();
     renderPenaltyRows();
     try { localStorage.setItem("init_cache", JSON.stringify(data)); } catch (e) {}
     try { localStorage.setItem("settings_cache", JSON.stringify(data.settings)); } catch (e) {}
@@ -147,6 +148,7 @@ async function init() {
   // 3. Render from cache immediately (no wait)
   renderChecklist();
   loadShiftsRender();
+  loadPenaltyChipsRender();
   renderPenaltyRows();
   setupTabs();
   connectEvents();
@@ -163,6 +165,7 @@ async function init() {
     // Re-render with fresh data (instant since DOM is already built)
     renderChecklist();
     loadShiftsRender();
+    loadPenaltyChipsRender();
     renderPenaltyRows();
 
     // Cache everything for next visit (instant on reload!)
@@ -236,6 +239,10 @@ function selectPenalty(id, chip) {
 
 async function loadPenaltyTypes() {
   penaltyTypesData = await api("/api/penalty-types");
+  loadPenaltyChipsRender();
+}
+
+function loadPenaltyChipsRender() {
   const container = document.getElementById("penaltyChips");
   container.innerHTML = "";
   if (!penaltyTypesData.length) {
