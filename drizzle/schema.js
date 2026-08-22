@@ -1,10 +1,13 @@
 import * as pgSchema from "./schema-pg.js";
 import * as mysqlSchema from "./schema-mysql.js";
+import * as sqliteSchema from "./schema-sqlite.js";
 
 // ===== اختيار محرك قاعدة البيانات تلقائيًا حسب DATABASE_URL =====
-// mysql://  → النسخة المحلية (MariaDB)
-// postgres:// → النسخة على Render
-const active = /^postgres/.test(process.env.DATABASE_URL || "") ? pgSchema : mysqlSchema;
+// postgres:// → Render
+// mysql://    → MariaDB محلي
+// (لا شيء)    → SQLite محلي
+const dbUrl = process.env.DATABASE_URL || "";
+const active = /^postgres/.test(dbUrl) ? pgSchema : /^mysql/.test(dbUrl) ? mysqlSchema : sqliteSchema;
 
 export const users = active.users;
 export const sections = active.sections;

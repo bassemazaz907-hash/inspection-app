@@ -1,29 +1,40 @@
 import "dotenv/config";
+import Database from "better-sqlite3";
+import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
 import mysql from "mysql2/promise";
 import pg from "pg";
 import { drizzle as drizzleMysql } from "drizzle-orm/mysql2";
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
-import { eq } from "drizzle-orm";
+import { eq, getTableName } from "drizzle-orm";
 import * as schema from "../drizzle/schema.js";
 
-// هل نستخدم PostgreSQL؟ (تحدده DATABASE_URL — postgres:// على Render)
-export const isPg = /^postgres/.test(process.env.DATABASE_URL || "");
+// هل نستخدم PostgreSQL؟ (יי DATABASE_URL — postgres:// على Render)
+const dbUrl = process.env.DATABASE_URL || "";
+export const isPg = /^postgres/.test(dbUrl);
+export const isSqlite = !dbUrl || /^sqlite/.test(dbUrl);
 
 // إرجاع التواريخ كنصوص بنفس صيغة MySQL (YYYY-MM-DD HH:MM:SS)
-pg.types.setTypeParser(1082, (v) => v); // DATE
-pg.types.setTypeParser(1114, (v) => v); // TIMESTAMP بدون منطقة زمنية
-pg.types.setTypeParser(1184, (v) => v); // TIMESTAMPTZ
+if (isPg) {
+  pg.types.setTypeParser(1082, (v) => v); // DATE
+  pg.types.setTypeParser(1114, (v) => v); // TIMESTAMP بدون منطقة زمنية
+  pg.types.setTypeParser(1184, (v) => v); // TIMESTAMPTZ
+}
 
 let _pool = null;
 let _db = null;
 
 export async function getPool() {
-  if (!_pool && process.env.DATABASE_URL) {
-    if (isPg) {
-      _pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+  if (!_pool) {
+    if (isSqlite) {
+      const sqlite = new Database("./local.db");
+      sqlite.pragma("journal_mode = WAL");
+      sqlite.pragma("foreign_keys = ON");
+      _pool = sqlite;
+    } else if (isPg) {
+      _pool = new pg.Pool({ connectionString: dbUrl });
     } else {
       _pool = mysql.createPool({
-        uri: process.env.DATABASE_URL,
+        uri: dbUrl,
         multipleStatements: true,
         dateStrings: true,
       });
@@ -33,15 +44,27 @@ export async function getPool() {
 }
 
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db) {
     const pool = await getPool();
-    _db = isPg ? drizzlePg(pool, { schema, mode: "default" }) : drizzleMysql(pool, { schema, mode: "default" });
+    if (isSqlite) {
+      _db = drizzleSqlite(pool, { schema });
+    } else if (isPg) {
+      _db = drizzlePg(pool, { schema, mode: "default" });
+    } else {
+      _db = drizzleMysql(pool, { schema, mode: "default" });
+    }
   }
   return _db;
 }
 
 // إدراج سطر وإرجاع رقمه (يعمل على المحركين)
 export async function insertReturnId(tx, table, values) {
+  if (isSqlite) {
+    await tx.insert(table).values(values);
+    const pool = await getPool();
+    const row = pool.prepare("SELECT last_insert_rowid() AS id").get();
+    return Number(row.id);
+  }
   if (isPg) {
     const [row] = await tx.insert(table).values(values).returning({ id: table.id });
     return row.id;
@@ -51,6 +74,89 @@ export async function insertReturnId(tx, table, values) {
 }
 
 // إنشاء الجداول تلقائياً عند أول تشغيل (IF NOT EXISTS)
+// نسخة SQLite (تشغيل محلي بدون قاعدة بيانات)
+const SCHEMA_SQLITE = `
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  open_id TEXT NOT NULL UNIQUE,
+  name TEXT,
+  email TEXT,
+  login_method TEXT,
+  last_signed_in TEXT,
+  role TEXT DEFAULT 'user'
+);
+
+CREATE TABLE IF NOT EXISTS sections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS inspection_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  section_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  icon TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS shifts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS penalty_types (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  amount REAL NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_date TEXT NOT NULL,
+  shift_id INTEGER,
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS report_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id INTEGER NOT NULL,
+  inspection_item_id INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  notes TEXT,
+  FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
+  FOREIGN KEY (inspection_item_id) REFERENCES inspection_items(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS penalties (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id INTEGER NOT NULL,
+  penalty_type_id INTEGER NOT NULL,
+  amount REAL NOT NULL DEFAULT 0,
+  note TEXT,
+  FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
+  FOREIGN KEY (penalty_type_id) REFERENCES penalty_types(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL UNIQUE,
+  value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  report_id INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
+);
+`;
+
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -219,13 +325,24 @@ CREATE TABLE IF NOT EXISTS notifications (
 export async function initSchema() {
   const pool = await getPool();
   if (!pool) return;
+  if (isSqlite) {
+    pool.exec(SCHEMA_SQLITE);
+    await migrateSchema(pool);
+    return;
+  }
   await pool.query(isPg ? SCHEMA_SQL_PG : SCHEMA_SQL);
   await migrateSchema(pool);
 }
 
 async function migrateSchema(pool) {
   try {
-    if (isPg) {
+    if (isSqlite) {
+      // SQLite: check if icon column exists
+      const info = pool.prepare(`PRAGMA table_info(inspection_items)`).all();
+      if (!info.some((c) => c.name === "icon")) {
+        pool.exec(`ALTER TABLE inspection_items ADD COLUMN icon VARCHAR(64)`);
+      }
+    } else if (isPg) {
       await pool.query(`ALTER TABLE inspection_items ADD COLUMN IF NOT EXISTS icon VARCHAR(64)`);
     } else {
       const [rows] = await pool.query(
@@ -255,7 +372,15 @@ export async function getSetting(key, defaultValue = null) {
 export async function setSetting(key, value) {
   const db = await getDb();
   if (!db) return;
-  if (isPg) {
+  if (isSqlite) {
+    const pool = await getPool();
+    const existing = pool.prepare(`SELECT id FROM settings WHERE key = ?`).get(key);
+    if (existing) {
+      pool.prepare(`UPDATE settings SET value = ? WHERE key = ?`).run(value, key);
+    } else {
+      pool.prepare(`INSERT INTO settings (key, value) VALUES (?, ?)`).run(key, value);
+    }
+  } else if (isPg) {
     await db
       .insert(schema.settings)
       .values({ key, value })

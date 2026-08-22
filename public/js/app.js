@@ -80,12 +80,29 @@ function handleEvent(ev) {
     toast(msg, "info", "🔔");
     playBeep();
     showBrowserNotification(msg);
+  } else if (ev.type === "data") {
+    refreshData();
   } else if (ev.type === "settings") {
     if (ev.title) applyLabels(ev.labels);
     if (ev.theme) applyTheme(ev.theme);
     if (ev.logos) applyLogos(ev.logos);
     toast(L.title + " — " + L.settings_updated, "success", "🎨");
   }
+}
+
+async function refreshData() {
+  try {
+    const data = await api("/api/init");
+    applyCachedSettings(data.settings);
+    sectionsData = data.sections || [];
+    shiftsData = data.shifts || [];
+    penaltyTypesData = data.penaltyTypes || [];
+    renderChecklist();
+    loadShiftsRender();
+    renderPenaltyRows();
+    try { localStorage.setItem("init_cache", JSON.stringify(data)); } catch (e) {}
+    try { localStorage.setItem("settings_cache", JSON.stringify(data.settings)); } catch (e) {}
+  } catch (e) {}
 }
 
 function showBrowserNotification(body) {

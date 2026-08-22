@@ -15,7 +15,7 @@ import {
   shifts,
   notifications,
 } from "../drizzle/schema.js";
-import { getDb, getPool, getAppSettings, saveAppSettings, getSetting, setSetting, initSchema, insertReturnId, isPg } from "./db.js";
+import { getDb, getPool, getAppSettings, saveAppSettings, getSetting, setSetting, initSchema, insertReturnId, isPg, isSqlite } from "./db.js";
 import { hashPassword, verifyPassword, createToken, isValidToken, revokeToken } from "./auth.js";
 import {
   DEFAULT_TITLE,
@@ -423,6 +423,9 @@ app.get("/api/monthly-analytics", handle(async (req, res) => {
       const { rows } = await pool.query(pgSql, params);
       return rows;
     }
+    if (isSqlite) {
+      return pool.prepare(sql).all(...params);
+    }
     const [rows] = await pool.query(sql, params);
     return rows;
   }
@@ -688,6 +691,7 @@ app.post("/api/admin/sections", requireAdmin, handle(async (req, res) => {
   if (!name || !name.trim()) return res.status(400).json({ error: "اسم القسم مطلوب" });
   const rows = await db.select({ n: max(sections.order) }).from(sections);
   const id = await insertReturnId(db, sections, { name: name.trim(), order: (rows[0]?.n || 0) + 1 });
+  broadcast({ type: "data" });
   res.json({ id });
 }));
 
@@ -698,6 +702,7 @@ app.put("/api/admin/sections/:id", requireAdmin, handle(async (req, res) => {
   if (typeof req.body?.name === "string" && req.body.name.trim()) data.name = req.body.name.trim();
   if (req.body?.order !== undefined) data.order = Number(req.body.order);
   await db.update(sections).set(data).where(eq(sections.id, Number(req.params.id)));
+  broadcast({ type: "data" });
   res.json({ ok: true });
 }));
 
@@ -705,6 +710,7 @@ app.delete("/api/admin/sections/:id", requireAdmin, handle(async (req, res) => {
   const db = await getDb();
   if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
   await db.delete(sections).where(eq(sections.id, Number(req.params.id)));
+  broadcast({ type: "data" });
   res.json({ ok: true });
 }));
 
@@ -721,6 +727,7 @@ app.post("/api/admin/items", requireAdmin, handle(async (req, res) => {
     icon: typeof icon === "string" && icon.trim() ? icon.trim() : null,
     order: (rows[0]?.n || 0) + 1,
   });
+  broadcast({ type: "data" });
   res.json({ id });
 }));
 
@@ -733,6 +740,7 @@ app.put("/api/admin/items/:id", requireAdmin, handle(async (req, res) => {
   if (req.body?.order !== undefined) data.order = Number(req.body.order);
   if (req.body?.sectionId !== undefined) data.sectionId = Number(req.body.sectionId);
   await db.update(inspectionItems).set(data).where(eq(inspectionItems.id, Number(req.params.id)));
+  broadcast({ type: "data" });
   res.json({ ok: true });
 }));
 
@@ -740,6 +748,7 @@ app.delete("/api/admin/items/:id", requireAdmin, handle(async (req, res) => {
   const db = await getDb();
   if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
   await db.delete(inspectionItems).where(eq(inspectionItems.id, Number(req.params.id)));
+  broadcast({ type: "data" });
   res.json({ ok: true });
 }));
 
@@ -751,6 +760,7 @@ app.post("/api/admin/shifts", requireAdmin, handle(async (req, res) => {
   if (!name || !name.trim()) return res.status(400).json({ error: "اسم الوردية مطلوب" });
   const rows = await db.select({ n: max(shifts.order) }).from(shifts);
   const id = await insertReturnId(db, shifts, { name: name.trim(), order: (rows[0]?.n || 0) + 1 });
+  broadcast({ type: "data" });
   res.json({ id });
 }));
 
@@ -761,6 +771,7 @@ app.put("/api/admin/shifts/:id", requireAdmin, handle(async (req, res) => {
   if (typeof req.body?.name === "string" && req.body.name.trim()) data.name = req.body.name.trim();
   if (req.body?.order !== undefined) data.order = Number(req.body.order);
   await db.update(shifts).set(data).where(eq(shifts.id, Number(req.params.id)));
+  broadcast({ type: "data" });
   res.json({ ok: true });
 }));
 
@@ -768,6 +779,7 @@ app.delete("/api/admin/shifts/:id", requireAdmin, handle(async (req, res) => {
   const db = await getDb();
   if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
   await db.delete(shifts).where(eq(shifts.id, Number(req.params.id)));
+  broadcast({ type: "data" });
   res.json({ ok: true });
 }));
 
@@ -778,6 +790,7 @@ app.post("/api/admin/penalty-types", requireAdmin, handle(async (req, res) => {
   const { name, amount } = req.body || {};
   if (!name || !name.trim()) return res.status(400).json({ error: "اسم الجزاء مطلوب" });
   const id = await insertReturnId(db, penaltyTypes, { name: name.trim(), amount: String(Number(amount || 0)) });
+  broadcast({ type: "data" });
   res.json({ id });
 }));
 
@@ -788,6 +801,7 @@ app.put("/api/admin/penalty-types/:id", requireAdmin, handle(async (req, res) =>
   if (typeof req.body?.name === "string" && req.body.name.trim()) data.name = req.body.name.trim();
   if (req.body?.amount !== undefined) data.amount = String(Number(req.body.amount));
   await db.update(penaltyTypes).set(data).where(eq(penaltyTypes.id, Number(req.params.id)));
+  broadcast({ type: "data" });
   res.json({ ok: true });
 }));
 
@@ -795,6 +809,7 @@ app.delete("/api/admin/penalty-types/:id", requireAdmin, handle(async (req, res)
   const db = await getDb();
   if (!db) return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
   await db.delete(penaltyTypes).where(eq(penaltyTypes.id, Number(req.params.id)));
+  broadcast({ type: "data" });
   res.json({ ok: true });
 }));
 
