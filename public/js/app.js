@@ -125,7 +125,7 @@ function applyCachedSettings(settings) {
 }
 
 async function init() {
-  // 1. Apply cached settings INSTANTLY from localStorage (0ms)
+  // 1. Apply cached settings from localStorage for instant splash
   let cached = null;
   try { cached = JSON.parse(localStorage.getItem("init_cache") || "null"); } catch (e) {}
   if (cached) {
@@ -138,14 +138,14 @@ async function init() {
     applyCachedSettings(cached);
   }
 
-  // 2. Hide splash INSTANTLY — content visible from cache
+  // 2. Hide splash
   hideSplash();
   document.getElementById("todayHint").textContent = new Date().toLocaleDateString(getLocaleStr(), {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
   document.getElementById("reportDate").value = todayStr();
 
-  // 3. Render from cache immediately (no wait)
+  // 3. Render from cache immediately
   renderChecklist();
   loadShiftsRender();
   loadPenaltyChipsRender();
@@ -154,7 +154,7 @@ async function init() {
   connectEvents();
   setupAnalytics();
 
-  // 4. ONE single API call for ALL data
+  // 4. Fetch FRESH data from server (always network, not cache)
   try {
     const data = await api("/api/init");
     applyCachedSettings(data.settings);
@@ -162,13 +162,11 @@ async function init() {
     shiftsData = data.shifts || [];
     penaltyTypesData = data.penaltyTypes || [];
 
-    // Re-render with fresh data (instant since DOM is already built)
     renderChecklist();
     loadShiftsRender();
     loadPenaltyChipsRender();
     renderPenaltyRows();
 
-    // Cache everything for next visit (instant on reload!)
     try { localStorage.setItem("init_cache", JSON.stringify(data)); } catch (e) {}
     try { localStorage.setItem("settings_cache", JSON.stringify(data.settings)); } catch (e) {}
   } catch (e) {

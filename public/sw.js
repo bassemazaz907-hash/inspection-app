@@ -1,4 +1,4 @@
-const CACHE = "inspection-v6";
+const CACHE = "inspection-v7";
 const CORE = ["/", "/index.html", "/admin.html", "/reports.html", "/css/style.css", "/js/theme.js", "/js/app.js", "/js/admin.js", "/js/reports.js", "/js/pwa.js", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png", "/app-icon.png"];
 
 self.addEventListener("install", (event) => {
@@ -10,13 +10,13 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== CACHE && k !== API_CACHE).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
-const API_CACHE = "api-v1";
-const CACHEABLE_API = new Set(["/api/init", "/api/settings/public"]);
+const API_CACHE = "api-v2";
+const CACHEABLE_API = new Set(["/api/settings/public"]);
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
