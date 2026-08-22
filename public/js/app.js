@@ -626,9 +626,8 @@ function refreshDynamicContent() {
   });
   renderChecklist();
   loadShiftsRender();
+  loadPenaltyChipsRender();
   renderPenaltyRows();
-  document.getElementById("penaltyRows").innerHTML = "";
-  currentPenaltyIds.clear();
   if (document.getElementById("view-analytics") && document.getElementById("view-analytics").classList.contains("active")) {
     loadAnalytics();
   }
